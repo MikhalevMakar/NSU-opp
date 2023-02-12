@@ -4,12 +4,12 @@
 #include <cmath>
 
 enum { SIZE_MATRIX = 4,
-       ARBITRARY_VALUE = 0,
-       ZERO_VALUE = 0
+    ARBITRARY_VALUE = 0,
+    ZERO_VALUE = 0
 };
 
 const double τ =  1e-2;
-const double ε = 1e-5;
+const double ε = 1e-7;
 
 __attribute__((unused)) void PrintMatrix(double* matrix) {
     for(int i = 0; i < SIZE_MATRIX; ++i) {
@@ -70,7 +70,7 @@ double* GeneratePartMatrix(const int& rank, const int& countProcess) {
 
 double* MultVectors(const double* vector1, const double* vector2, int cntProcess) {
     double* vectorResult = GenerateVectorArbitrarySizeValue(SIZE_MATRIX, ZERO_VALUE);
-
+    
     for(int i = 0; i < SIZE_MATRIX / cntProcess; ++i) {
         for  (int j = 0; j < SIZE_MATRIX; ++j) {
             vectorResult[i] += vector1[j+i*SIZE_MATRIX] * vector2[j];
@@ -121,23 +121,33 @@ void CopyVector(double* copyVector, const double* sourceVector) {
 }
 
 //x^(n+1) = x^n – τ(Ax^n – b)
+void  DeleteVectors(double* v1, double* v2, double* v3) {
+    delete[] v1;
+    delete[] v2;
+    delete[] v3;
+}
 
 double* IterativeMethod(int rank, int cntProcess) {
     double* A = GeneratePartMatrix(rank, cntProcess);
     double* b = GenerateVectorRightParts();
     double* x = GenerateSolutionVector();
-    MPI_Barrier(MPI_COMM_WORLD);
+    //MPI_Barrier(MPI_COMM_WORLD);
 
-    double* vectorResult;
-    double* multAx;
+     double* vectorResult;
+     double* multAx;
 
     do {
-         multAx = MultVectors(A, x, cntProcess);
-         double* Axt = MultVectorByConstant(MinusVectors(multAx, b), τ);
-         vectorResult = MinusVectors(x, Axt);
-         CopyVector(x, vectorResult);
-   } while(IsFirstNormMoreEpsilon(multAx, b));
+        multAx = MultVectors(A, x, cntProcess);
+        double* mult_Ax_minus_b = MinusVectors(multAx, b);
+        double* multVectorByConst = MultVectorByConstant(mult_Ax_minus_b, τ);
+        vectorResult = MinusVectors(x, multVectorByConst);
+        CopyVector(x, vectorResult);
 
+        delete[] multVectorByConst;
+        delete[] mult_Ax_minus_b;
+    } while(IsFirstNormMoreEpsilon(multAx, b));
+
+    DeleteVectors(A, b, x);
     return vectorResult;
 }
 
@@ -154,7 +164,7 @@ int main(int argc, char* argv[]) {
     double* vector = IterativeMethod(rank, cntProcess);
 
     //if(rank == cntProcess-1) {
-         PrintVector(vector);
+    PrintVector(vector);
     //}
     MPI_Finalize();
 
