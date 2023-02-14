@@ -2,14 +2,16 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <assert.h>
 
-enum { SIZE_MATRIX = 8,
-    ARBITRARY_VALUE = 1,
+enum { SIZE_MATRIX = 1024,
+    ARBITRARY_VALUE = 0,
     ZERO_VALUE = 0
 };
-
-const double τ =  1e-2;
-const double ε = 1e-5;
+//τ
+//ε
+const double tau =  1e-5;
+const double epsilon = 1e-7;
 
 typedef double* dynamicArray;
 typedef double* dynamicMatrix;
@@ -67,29 +69,41 @@ int GetBalanceSizeVector(const int& sizeOrigin, const int& countProcess) {
 // 0 0 0 0 0 0
 // 0 0 0 0 0 0
 
-dynamicMatrix GeneratePartMatrix(const int& rank, const int& countProcess, int fictitiousSize) {
-    int partFictitiousSizeMatrix = fictitiousSize * (fictitiousSize / countProcess);
-    int partOriginSizeMatrix = SIZE_MATRIX * (SIZE_MATRIX / countProcess);
+int GetCntCurrentFillLineMatrix(const int& rank, const int& cntProcess, int newSize) {
+    int resultFillLine = 0;
+    for (int startRank = 1; startRank < rank+1; ++startRank) {
+        resultFillLine += (newSize / cntProcess);
+    }
+    return resultFillLine;
+}
+
+dynamicMatrix GeneratePartMatrix(const int& rank, const int& cntProcess, int fictitiousSize) {
+
+    int partFictitiousSizeMatrix = fictitiousSize * (fictitiousSize / cntProcess);
 
     dynamicMatrix partMatrix = GenerateDynamicArray(partFictitiousSizeMatrix);
 
     GenerateVectorArbitraryValue(partMatrix, partFictitiousSizeMatrix, ZERO_VALUE);
 
-    int countRows = fictitiousSize / countProcess;
-    int startPosition = countRows * rank;
-    for (int i = 0, offset = 0; i < fictitiousSize/countProcess && rank < SIZE_MATRIX/countProcess; ++i,  offset += fictitiousSize) {
-        for (int j = 0; j < SIZE_MATRIX; ++j) {
-            partMatrix[j+offset] = 1.0;
-        }
-        partMatrix[startPosition + i] = 2.0;
-        startPosition += fictitiousSize;
+    int countRows = fictitiousSize / cntProcess;
+    int index = countRows * rank;
+    int  numberCntLine = GetCntCurrentFillLineMatrix(rank, cntProcess,  fictitiousSize);
+
+    for (int i = 0, offset = 0; i < fictitiousSize/cntProcess; ++i, offset += fictitiousSize) {
+        if(numberCntLine+i+1 <= SIZE_MATRIX) {
+            for (int j = 0; j < SIZE_MATRIX; ++j) {
+                partMatrix[offset + j] = 1.0;
+            }
+            partMatrix[index + i] = 2.0;
+       }
+        index += fictitiousSize;
     }
     return partMatrix;
 }
 
 //2 1 1 1 0 0 1 2 1 1 0 0
 
-dynamicArray MultiplyVectors(const dynamicArray vector1, const dynamicArray vector2, dynamicArray result, int size, int cntProcess) {
+dynamicArray MultiplyVectors(const dynamicArray vector1, const dynamicArray vector2, dynamicArray result, const int& size, const int& cntProcess) {
     GenerateVectorArbitraryValue(result, size/cntProcess, ZERO_VALUE);
     for(int i = 0; i < size / cntProcess; ++i) {
         for  (int j = 0; j < size; ++j) {
@@ -99,14 +113,14 @@ dynamicArray MultiplyVectors(const dynamicArray vector1, const dynamicArray vect
     return result;
 }
 
-dynamicArray MinusVectors(const dynamicArray vector1, const dynamicArray vector2, dynamicArray result, int size) {
+dynamicArray MinusVectors(const dynamicArray vector1, const dynamicArray vector2, dynamicArray result, const int& size) {
     for(int i = 0; i < size; ++i) {
         result[i] = vector1[i] - vector2[i];
     }
     return result;
 }
 
-dynamicArray MultiplyVectorByConstant(dynamicArray vector, double constant, int size) {
+dynamicArray MultiplyVectorByConstant(dynamicArray vector, const double& constant, const int& size) {
     for(int i = 0; i < size; ++i) {
         vector[i] *= constant;
     }
@@ -122,11 +136,12 @@ double FormingFirstNorm(const dynamicArray vector) {
 }
 
 double NormCalculation(const dynamicArray vector1, const dynamicArray vector2, dynamicArray vectorUtility, int size) {
+    //std::cout <<FormingFirstNorm(MinusVectors(vector1, vector2, vectorUtility, size)) << "/ " << FormingFirstNorm(vector2) << "=" << FormingFirstNorm(MinusVectors(vector1, vector2, vectorUtility, size)) / FormingFirstNorm(vector2) << "\n";
     return FormingFirstNorm(MinusVectors(vector1, vector2, vectorUtility, size)) / FormingFirstNorm(vector2);
 }
 
 bool IsFirstNormMoreEpsilon(const dynamicArray vector1, const dynamicArray vector2, dynamicArray vectorUtility, int size) {
-    return !(NormCalculation(vector1, vector2, vectorUtility, size) < ε);
+    return !(NormCalculation(vector1, vector2, vectorUtility, size) < epsilon);
 }
 
 void CopyVector(dynamicArray copyVector, const dynamicArray sourceVector, int size) {
@@ -155,36 +170,44 @@ void  DeleteVectors(dynamicMatrix v1, dynamicArray v2, dynamicArray v3, dynamicA
 // 0 0 0 0 0 0
 
 //x^(n+1) = x^n – τ(Ax^n – b)
+
+void DebugPrint(double* matrix, int size) {
+    int cntTWO = 0;
+    int cntONE = 0;
+    int CntZERO = 0;
+    for (int i = 0; i < size/4; ++i) {
+        for (int j = 0; j < size; ++j) {
+            if(matrix[i * size + j] == 2.0) cntTWO++;
+            if(matrix[i * size + j] == 0.0) CntZERO++;
+            if(matrix[i * size + j] == 1.0) cntONE++;
+        }
+    }
+    std::cout << "cntTWO: " <<  cntTWO << "\n";
+    std::cout << "cntONE: " <<  cntONE << "\n";
+    std::cout << "CntZERO: " <<  CntZERO << "\n";
+}
+
 double* IterativeMethod(const int& rank, const int& cntProcess) {
     int fictitiousSize = GetBalanceSizeVector(SIZE_MATRIX, cntProcess);
     dynamicMatrix A = GeneratePartMatrix(rank, cntProcess, fictitiousSize);
 
-    std::cout<< fictitiousSize << "\n";
-    PrintVector(A, fictitiousSize*fictitiousSize/ cntProcess);
-    std::cout << "\n";
+    if(rank == 0)  {
+        std::cout << "\nprint matrix A: \n";
+        DebugPrint(A, fictitiousSize);
+    }
 
     dynamicArray b = GenerateVectorRightParts(fictitiousSize, SIZE_MATRIX);
     dynamicArray x = GenerateSolutionVector(fictitiousSize, SIZE_MATRIX);
 
-//    PrintVector(b, fictitiousSize);
-//    PrintVector(x, fictitiousSize);
 
     dynamicMatrix vectorResult = GenerateDynamicArray(fictitiousSize);
     dynamicMatrix multiplyPartMatrix = GenerateDynamicArray(fictitiousSize / cntProcess);
     dynamicMatrix vectorUtility = GenerateDynamicArray(fictitiousSize);
     dynamicMatrix multiplyVectors = GenerateDynamicArray(fictitiousSize);
 
-    int cnt = 0;
     do {
-        //PrintVector(A, fictitiousSize / cntProcess);
           multiplyPartMatrix = MultiplyVectors(A, x, multiplyPartMatrix, fictitiousSize, cntProcess);
-//        std::cout << "rank: " << rank << std::endl;
-//        PrintVector(multiplyPartMatrix, 2);
-//        std::cout  << std::endl;
 
-//        printf("multiplyPartMatrix: \n ");
-//        PrintVector(multiplyPartMatrix, fictitiousSize/cntProcess);
-//        printf("\n");
         MPI_Allgather(multiplyPartMatrix,
                       fictitiousSize / cntProcess,
                       MPI_DOUBLE,
@@ -194,33 +217,24 @@ double* IterativeMethod(const int& rank, const int& cntProcess) {
                       MPI_COMM_WORLD);
 
         CopyVector(multiplyVectors, vectorUtility, fictitiousSize);
-//        if(rank == 1 && cnt==1) PrintVector(vectorResult, 6);
 
         vectorResult = MinusVectors(vectorUtility, b, vectorResult, fictitiousSize);
-//        if(rank == 1 && cnt==1) {
-//            PrintVector(vectorUtility, 6);
-//            //PrintVector(b, 6);
-//            //PrintVector(vectorResult, 6);
-//        }
 
-        vectorResult = MultiplyVectorByConstant(vectorResult, τ, fictitiousSize);
-//        //if(rank == 1 && cnt==1) PrintVector(vectorResult, 6);
-//        //PrintVector(vectorResult, fictitiousSize);
-//
+        vectorResult = MultiplyVectorByConstant(vectorResult, tau, fictitiousSize);
+
         vectorResult = MinusVectors(x, vectorResult, vectorResult, fictitiousSize);
-//        //if(rank == 1 && cnt==1) PrintVector(vectorResult, 6);
+
         CopyVector(x, vectorResult, fictitiousSize);
 
-        //if(rank == 1 && cnt==1) PrintVector(x, 6);
-        } while(IsFirstNormMoreEpsilon(multiplyVectors, b, vectorUtility, fictitiousSize));
-        //cnt++;
-    //} while(cnt != 3);
+       } while(IsFirstNormMoreEpsilon(multiplyVectors, b, vectorUtility, fictitiousSize));
 
     DeleteVectors(A, b, x, multiplyPartMatrix, vectorUtility, multiplyVectors);
     return vectorResult;
 }
 
 int main(int argc, char* argv[]) {
+    double starttime, endtime;
+    starttime = MPI_Wtime();
     MPI_Init(&argc, &argv);
     int rank = 0, cntProcess = 0;
 
@@ -231,7 +245,10 @@ int main(int argc, char* argv[]) {
 
     MPI_Finalize();
     //printf("result\n");
-    if(rank == 0) PrintVector(vector, SIZE_MATRIX);
+    //if(rank == 0) PrintVector(vector, SIZE_MATRIX);
+
+    endtime   = MPI_Wtime();
+    //std::cout << endtime - starttime << std::endl;
     delete[] vector;
     return 0;
 }
