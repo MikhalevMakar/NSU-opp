@@ -10,8 +10,8 @@ enum { SIZE_MATRIX = 1024,
 };
 //τ
 //ε
-const double tau =  1e-5;
-const double epsilon = 1e-7;
+const double τ =  1e-5;
+const double ε = 1e-7;
 
 typedef double* dynamicArray;
 typedef double* dynamicMatrix;
@@ -78,7 +78,6 @@ int GetCntCurrentFillLineMatrix(const int& rank, const int& cntProcess, int newS
 }
 
 dynamicMatrix GeneratePartMatrix(const int& rank, const int& cntProcess, int fictitiousSize) {
-
     int partFictitiousSizeMatrix = fictitiousSize * (fictitiousSize / cntProcess);
 
     dynamicMatrix partMatrix = GenerateDynamicArray(partFictitiousSizeMatrix);
@@ -100,8 +99,6 @@ dynamicMatrix GeneratePartMatrix(const int& rank, const int& cntProcess, int fic
     }
     return partMatrix;
 }
-
-//2 1 1 1 0 0 1 2 1 1 0 0
 
 dynamicArray MultiplyVectors(const dynamicArray vector1, const dynamicArray vector2, dynamicArray result, const int& size, const int& cntProcess) {
     GenerateVectorArbitraryValue(result, size/cntProcess, ZERO_VALUE);
@@ -136,12 +133,11 @@ double FormingFirstNorm(const dynamicArray vector) {
 }
 
 double NormCalculation(const dynamicArray vector1, const dynamicArray vector2, dynamicArray vectorUtility, int size) {
-    //std::cout <<FormingFirstNorm(MinusVectors(vector1, vector2, vectorUtility, size)) << "/ " << FormingFirstNorm(vector2) << "=" << FormingFirstNorm(MinusVectors(vector1, vector2, vectorUtility, size)) / FormingFirstNorm(vector2) << "\n";
     return FormingFirstNorm(MinusVectors(vector1, vector2, vectorUtility, size)) / FormingFirstNorm(vector2);
 }
 
 bool IsFirstNormMoreEpsilon(const dynamicArray vector1, const dynamicArray vector2, dynamicArray vectorUtility, int size) {
-    return !(NormCalculation(vector1, vector2, vectorUtility, size) < epsilon);
+    return !(NormCalculation(vector1, vector2, vectorUtility, size) < ε);
 }
 
 void CopyVector(dynamicArray copyVector, const dynamicArray sourceVector, int size) {
@@ -159,42 +155,11 @@ void  DeleteVectors(dynamicMatrix v1, dynamicArray v2, dynamicArray v3, dynamicA
     delete[] v6;
 }
 
-
-// 2 1 1 1 0 0
-// 1 2 1 1 0 0
-
-// 1 1 2 1 0 0
-// 1 1 1 2 0 0
-
-// 0 0 0 0 0 0
-// 0 0 0 0 0 0
-
 //x^(n+1) = x^n – τ(Ax^n – b)
-
-void DebugPrint(double* matrix, int size) {
-    int cntTWO = 0;
-    int cntONE = 0;
-    int CntZERO = 0;
-    for (int i = 0; i < size/4; ++i) {
-        for (int j = 0; j < size; ++j) {
-            if(matrix[i * size + j] == 2.0) cntTWO++;
-            if(matrix[i * size + j] == 0.0) CntZERO++;
-            if(matrix[i * size + j] == 1.0) cntONE++;
-        }
-    }
-    std::cout << "cntTWO: " <<  cntTWO << "\n";
-    std::cout << "cntONE: " <<  cntONE << "\n";
-    std::cout << "CntZERO: " <<  CntZERO << "\n";
-}
 
 double* IterativeMethod(const int& rank, const int& cntProcess) {
     int fictitiousSize = GetBalanceSizeVector(SIZE_MATRIX, cntProcess);
     dynamicMatrix A = GeneratePartMatrix(rank, cntProcess, fictitiousSize);
-
-    if(rank == 0)  {
-        std::cout << "\nprint matrix A: \n";
-        DebugPrint(A, fictitiousSize);
-    }
 
     dynamicArray b = GenerateVectorRightParts(fictitiousSize, SIZE_MATRIX);
     dynamicArray x = GenerateSolutionVector(fictitiousSize, SIZE_MATRIX);
@@ -220,7 +185,7 @@ double* IterativeMethod(const int& rank, const int& cntProcess) {
 
         vectorResult = MinusVectors(vectorUtility, b, vectorResult, fictitiousSize);
 
-        vectorResult = MultiplyVectorByConstant(vectorResult, tau, fictitiousSize);
+        vectorResult = MultiplyVectorByConstant(vectorResult, τ, fictitiousSize);
 
         vectorResult = MinusVectors(x, vectorResult, vectorResult, fictitiousSize);
 
@@ -233,8 +198,8 @@ double* IterativeMethod(const int& rank, const int& cntProcess) {
 }
 
 int main(int argc, char* argv[]) {
-    double starttime, endtime;
-    starttime = MPI_Wtime();
+    double startTime, endTime;
+    startTime = MPI_Wtime();
     MPI_Init(&argc, &argv);
     int rank = 0, cntProcess = 0;
 
@@ -243,12 +208,15 @@ int main(int argc, char* argv[]) {
 
     dynamicArray vector = IterativeMethod(rank, cntProcess);
 
-    MPI_Finalize();
-    //printf("result\n");
-    //if(rank == 0) PrintVector(vector, SIZE_MATRIX);
 
-    endtime   = MPI_Wtime();
-    //std::cout << endtime - starttime << std::endl;
+    MPI_Finalize();
+    endTime = MPI_Wtime();
+
+    if(rank == 0) {
+        printf("RESULT VECTOR\n");
+        PrintVector(vector, SIZE_MATRIX);
+        std::cout << "\nTIME: " << endTime - startTime << std::endl;
+    }
     delete[] vector;
     return 0;
 }
