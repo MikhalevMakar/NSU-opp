@@ -72,7 +72,7 @@ int GetBalanceSizeVector(const int& sizeOrigin, const int& countProcess) {
 int GetCntCurrentFillLineMatrix(const int& rank, const int& cntProcess, int newSize) {
     int resultFillLine = 0;
     for (int startRank = 1; startRank < rank+1; ++startRank) {
-        resultFillLine += (newSize / cntProcess);
+        resultFillLine += newSize;
     }
     return resultFillLine;
 }
@@ -86,16 +86,15 @@ dynamicMatrix GeneratePartMatrix(const int& rank, const int& cntProcess, int fic
 
     int countRows = fictitiousSize / cntProcess;
     int index = countRows * rank;
-    int  numberCntLine = GetCntCurrentFillLineMatrix(rank, cntProcess,  fictitiousSize);
-
+    int  numberCntLine = GetCntFillVectors(rank, cntProcess,  fictitiousSize/cntProcess);
     for (int i = 0, offset = 0; i < fictitiousSize/cntProcess; ++i, offset += fictitiousSize) {
-        if(numberCntLine+i+1 <= SIZE_MATRIX) {
-            for (int j = 0; j < SIZE_MATRIX; ++j) {
+        if(numberCntLine+i < SIZE_MATRIX) {
+            for (int j = 0; j < SIZE_MATRIX && numberCntLine+i+j < SIZE_MATRIX; ++j) {
                 partMatrix[offset + j] = 1.0;
             }
-            partMatrix[index + i] = 2.0;
-       }
-        index += fictitiousSize;
+            partMatrix[offset + i + rank] = 2.0;
+            index += fictitiousSize / cntProcess;
+        }
     }
     return partMatrix;
 }
