@@ -1,0 +1,7 @@
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Applications/CLion.app/Contents/bin/ninja/mac/ninja -G Ninja -S /Users/natasamihaleva/NSU_OPP/Task1/Version2 -B /Users/natasamihaleva/NSU_OPP/Task1/Version2/cmake-build-debug
+-- Found MPI_C: /opt/homebrew/Cellar/open-mpi/4.1.4_2/lib/libmpi.dylib (found version "3.1") 
+-- Found MPI_CXX: /opt/homebrew/Cellar/open-mpi/4.1.4_2/lib/libmpi.dylib (found version "3.1") 
+-- Found MPI: TRUE (found version "3.1")  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/natasamihaleva/NSU_OPP/Task1/Version2/cmake-build-debug

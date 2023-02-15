@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16.3)
-project(Task1)
+project(Version2)
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -9,4 +9,4 @@ find_package(MPI REQUIRED)
 
 include_directories("${MPI_CXX_INCLUDE_DIRS}")
 
-target_link_libraries(Task1 ${MPI_LIBRARIES})
+target_link_libraries(Version2 ${MPI_LIBRARIES})
