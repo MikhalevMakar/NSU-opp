@@ -55,7 +55,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/Users/natasamihaleva/NSU_OPP/Task1/Vershion1/cmake-build-debug"
+			"value" : "/Users/natasamihaleva/NSU_OPP/Task1/Version1/cmake-build-debug"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -515,7 +515,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/Users/natasamihaleva/NSU_OPP/Task1/Vershion1"
+			"value" : "/Users/natasamihaleva/NSU_OPP/Task1/Version1"
 		},
 		{
 			"name" : "CMAKE_INSTALL_NAME_TOOL",
@@ -795,7 +795,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "Task1"
+			"value" : "Version1"
 		},
 		{
 			"name" : "CMAKE_RANLIB",
@@ -1550,7 +1550,7 @@
 			"value" : "/opt/homebrew/bin/pkg-config"
 		},
 		{
-			"name" : "Task1_BINARY_DIR",
+			"name" : "Version1_BINARY_DIR",
 			"properties" : 
 			[
 				{
@@ -1559,10 +1559,10 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/Users/natasamihaleva/NSU_OPP/Task1/Vershion1/cmake-build-debug"
+			"value" : "/Users/natasamihaleva/NSU_OPP/Task1/Version1/cmake-build-debug"
 		},
 		{
-			"name" : "Task1_IS_TOP_LEVEL",
+			"name" : "Version1_IS_TOP_LEVEL",
 			"properties" : 
 			[
 				{
@@ -1574,7 +1574,7 @@
 			"value" : "ON"
 		},
 		{
-			"name" : "Task1_SOURCE_DIR",
+			"name" : "Version1_SOURCE_DIR",
 			"properties" : 
 			[
 				{
@@ -1583,7 +1583,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/Users/natasamihaleva/NSU_OPP/Task1/Vershion1"
+			"value" : "/Users/natasamihaleva/NSU_OPP/Task1/Version1"
 		}
 	],
 	"kind" : "cache",

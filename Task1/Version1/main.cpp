@@ -4,7 +4,7 @@
 #include <cmath>
 #include <assert.h>
 
-enum { SIZE_MATRIX = 1024,
+enum { SIZE_MATRIX = 100,
     ARBITRARY_VALUE = 0,
     ZERO_VALUE = 0
 };
@@ -92,9 +92,15 @@ dynamicMatrix GeneratePartMatrix(const int& rank, const int& cntProcess, int fic
             for (int j = 0; j < SIZE_MATRIX && numberCntLine+i+j < SIZE_MATRIX; ++j) {
                 partMatrix[offset + j] = 1.0;
             }
+<<<<<<< Updated upstream
             partMatrix[offset + i + rank] = 2.0;
             index += fictitiousSize / cntProcess;
         }
+=======
+            partMatrix[index + i] = 2.0;
+        }
+        index += fictitiousSize;
+>>>>>>> Stashed changes
     }
     return partMatrix;
 }

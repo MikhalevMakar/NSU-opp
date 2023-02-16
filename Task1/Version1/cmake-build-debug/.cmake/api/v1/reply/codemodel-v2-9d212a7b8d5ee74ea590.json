@@ -27,7 +27,7 @@
 					[
 						0
 					],
-					"name" : "Task1",
+					"name" : "Version1",
 					"targetIndexes" : 
 					[
 						0
@@ -38,9 +38,9 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "Task1::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-Task1-Debug-60635b062b7e6ecb1e58.json",
-					"name" : "Task1",
+					"id" : "Version1::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Version1-Debug-d0d1072cf56ec2fd4ff4.json",
+					"name" : "Version1",
 					"projectIndex" : 0
 				}
 			]
@@ -49,8 +49,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/Users/natasamihaleva/NSU_OPP/Task1/Vershion1/cmake-build-debug",
-		"source" : "/Users/natasamihaleva/NSU_OPP/Task1/Vershion1"
+		"build" : "/Users/natasamihaleva/NSU_OPP/Task1/Version1/cmake-build-debug",
+		"source" : "/Users/natasamihaleva/NSU_OPP/Task1/Version1"
 	},
 	"version" : 
 	{

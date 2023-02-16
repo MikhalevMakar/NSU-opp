@@ -1,4 +1,4 @@
-/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Applications/CLion.app/Contents/bin/ninja/mac/ninja -G Ninja -S /Users/natasamihaleva/NSU_OPP/Task1/Vershion1 -B /Users/natasamihaleva/NSU_OPP/Task1/Vershion1/cmake-build-debug
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Applications/CLion.app/Contents/bin/ninja/mac/ninja -G Ninja -S /Users/natasamihaleva/NSU_OPP/Task1/Version1 -B /Users/natasamihaleva/NSU_OPP/Task1/Version1/cmake-build-debug
 -- The C compiler identification is AppleClang 14.0.0.14000029
 -- The CXX compiler identification is AppleClang 14.0.0.14000029
 -- Detecting C compiler ABI info
@@ -16,4 +16,4 @@
 -- Found MPI: TRUE (found version "3.1")  
 -- Configuring done
 -- Generating done
--- Build files have been written to: /Users/natasamihaleva/NSU_OPP/Task1/Vershion1/cmake-build-debug
+-- Build files have been written to: /Users/natasamihaleva/NSU_OPP/Task1/Version1/cmake-build-debug

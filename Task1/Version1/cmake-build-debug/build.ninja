@@ -8,7 +8,7 @@
 # =============================================================================
 
 # =============================================================================
-# Project: Task1
+# Project: Version1
 # Configurations: Debug
 # =============================================================================
 
@@ -36,49 +36,49 @@ include CMakeFiles/rules.ninja
 #############################################
 # Logical path to working directory; prefix for absolute paths.
 
-cmake_ninja_workdir = /Users/natasamihaleva/NSU_OPP/Task1/Vershion1/cmake-build-debug/
+cmake_ninja_workdir = /Users/natasamihaleva/NSU_OPP/Task1/Version1/cmake-build-debug/
 # =============================================================================
-# Object build statements for EXECUTABLE target Task1
+# Object build statements for EXECUTABLE target Version1
 
 
 #############################################
-# Order-only phony target for Task1
+# Order-only phony target for Version1
 
-build cmake_object_order_depends_target_Task1: phony || CMakeFiles/Task1.dir
+build cmake_object_order_depends_target_Version1: phony || CMakeFiles/Version1.dir
 
-build CMakeFiles/Task1.dir/main.cpp.o: CXX_COMPILER__Task1_Debug /Users/natasamihaleva/NSU_OPP/Task1/Vershion1/main.cpp || cmake_object_order_depends_target_Task1
-  DEP_FILE = CMakeFiles/Task1.dir/main.cpp.o.d
+build CMakeFiles/Version1.dir/main.cpp.o: CXX_COMPILER__Version1_Debug /Users/natasamihaleva/NSU_OPP/Task1/Version1/main.cpp || cmake_object_order_depends_target_Version1
+  DEP_FILE = CMakeFiles/Version1.dir/main.cpp.o.d
   FLAGS = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -std=gnu++14
   INCLUDES = -I/opt/homebrew/Cellar/open-mpi/4.1.4_2/include
-  OBJECT_DIR = CMakeFiles/Task1.dir
-  OBJECT_FILE_DIR = CMakeFiles/Task1.dir
-  TARGET_COMPILE_PDB = CMakeFiles/Task1.dir/
-  TARGET_PDB = Task1.pdb
+  OBJECT_DIR = CMakeFiles/Version1.dir
+  OBJECT_FILE_DIR = CMakeFiles/Version1.dir
+  TARGET_COMPILE_PDB = CMakeFiles/Version1.dir/
+  TARGET_PDB = Version1.pdb
 
 
 # =============================================================================
-# Link build statements for EXECUTABLE target Task1
+# Link build statements for EXECUTABLE target Version1
 
 
 #############################################
-# Link the executable Task1
+# Link the executable Version1
 
-build Task1: CXX_EXECUTABLE_LINKER__Task1_Debug CMakeFiles/Task1.dir/main.cpp.o | /opt/homebrew/Cellar/open-mpi/4.1.4_2/lib/libmpi.dylib
+build Version1: CXX_EXECUTABLE_LINKER__Version1_Debug CMakeFiles/Version1.dir/main.cpp.o | /opt/homebrew/Cellar/open-mpi/4.1.4_2/lib/libmpi.dylib
   FLAGS = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk
   LINK_LIBRARIES = /opt/homebrew/Cellar/open-mpi/4.1.4_2/lib/libmpi.dylib
-  OBJECT_DIR = CMakeFiles/Task1.dir
+  OBJECT_DIR = CMakeFiles/Version1.dir
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_COMPILE_PDB = CMakeFiles/Task1.dir/
-  TARGET_FILE = Task1
-  TARGET_PDB = Task1.pdb
+  TARGET_COMPILE_PDB = CMakeFiles/Version1.dir/
+  TARGET_FILE = Version1
+  TARGET_PDB = Version1.pdb
 
 
 #############################################
 # Utility command for edit_cache
 
 build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/natasamihaleva/NSU_OPP/Task1/Vershion1/cmake-build-debug && /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+  COMMAND = cd /Users/natasamihaleva/NSU_OPP/Task1/Version1/cmake-build-debug && /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -89,7 +89,7 @@ build edit_cache: phony CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/natasamihaleva/NSU_OPP/Task1/Vershion1/cmake-build-debug && /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake --regenerate-during-build -S/Users/natasamihaleva/NSU_OPP/Task1/Vershion1 -B/Users/natasamihaleva/NSU_OPP/Task1/Vershion1/cmake-build-debug
+  COMMAND = cd /Users/natasamihaleva/NSU_OPP/Task1/Version1/cmake-build-debug && /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake --regenerate-during-build -S/Users/natasamihaleva/NSU_OPP/Task1/Version1 -B/Users/natasamihaleva/NSU_OPP/Task1/Version1/cmake-build-debug
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -105,9 +105,9 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 # =============================================================================
 
 #############################################
-# Folder: /Users/natasamihaleva/NSU_OPP/Task1/Vershion1/cmake-build-debug
+# Folder: /Users/natasamihaleva/NSU_OPP/Task1/Version1/cmake-build-debug
 
-build all: phony Task1
+build all: phony Version1
 
 # =============================================================================
 # Built-in targets
