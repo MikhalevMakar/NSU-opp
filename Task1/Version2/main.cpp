@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cassert>
 
-enum { SIZE_MATRIX = 2047,
+enum { SIZE_MATRIX = 3500,
        ARBITRARY_VALUE = 0,
        SIZE_ONE = 1,
        ZERO_VALUE = 0,
@@ -209,18 +209,17 @@ double* IterativeMethod(const int& rank, const int& cntProcess) {
     do {
         multiplyPartMatrixVector = MultiplyVectors(A, x, multiplyPartMatrixVector, fictitiousSize, rank, cntProcess);
 
-        MPI_Barrier(MPI_COMM_WORLD);
         MPI_Allreduce(multiplyPartMatrixVector, multiplyMatrixVector,
-                      fictitiousSize, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); //Формируем вектор A*x^n
+                      fictitiousSize, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
         MPI_Scatter(multiplyMatrixVector, fixedSizePartVector, MPI_DOUBLE, vectorUtility,
-                    fixedSizePartVector, MPI_DOUBLE, ROOT, MPI_COMM_WORLD); //Раскидываем вектор по процессам
+                    fixedSizePartVector, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
 
-        vectorUtility = MinusVectors(vectorUtility, b, vectorUtility, fixedSizePartVector); // Ax^n - b
+        vectorUtility = MinusVectors(vectorUtility, b, vectorUtility, fixedSizePartVector);
 
         findPartNorm = FormingFirstNorm(vectorUtility, fixedSizePartVector);
 
-        MPI_Allreduce(&findPartNorm, &resultNorm, SIZE_ONE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); //нашел норму
+        MPI_Allreduce(&findPartNorm, &resultNorm, SIZE_ONE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
        vectorUtility = MinusVectors(x, // t(A*x^n-b)
                                     MultiplyVectorByConstant(vectorUtility, vectorUtility, τ, fixedSizePartVector),
