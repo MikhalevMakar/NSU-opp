@@ -73,8 +73,6 @@ dynamicMatrix GeneratePartMatrix(const int& rank, const int& cntProcess, int fic
 
     dynamicMatrix partMatrix = GenerateDynamicArray(partFictitiousSizeMatrix);
 
-    GenerateVectorArbitraryValue(partMatrix, partFictitiousSizeMatrix, ZERO_VALUE);
-
     int countRows = fictitiousSize / cntProcess;
     int index = countRows * rank;
     int  numberCntLine = GetCntCurrentFillLineMatrix(rank, cntProcess,  fictitiousSize);

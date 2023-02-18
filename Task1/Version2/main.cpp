@@ -18,14 +18,14 @@ const double ε = 1e-7;
 typedef double* dynamicVector;
 typedef double* dynamicMatrix;
 
-void PrintVector(dynamicVector vector, int size) {
+void PrintVector(dynamicVector vector, const int size) {
     for(int j = 0; j < size; ++j) {
         std::cout << (double)vector[j] << " ";
     }
     printf("\n");
 }
 
-__attribute__((unused)) void PrintMatrix(dynamicVector vector, int size, int cntProcess) {
+__attribute__((unused)) void PrintMatrix(dynamicVector vector, const int size, const int cntProcess) {
     for(int j = 0; j < size/cntProcess; ++j) {
         for(int i = 0; i < size; ++i) {
             std::cout << (double) vector[j*size+i] << " ";
@@ -36,19 +36,19 @@ __attribute__((unused)) void PrintMatrix(dynamicVector vector, int size, int cnt
 }
 
 
-dynamicVector GenerateDynamicArray(int size) {
+dynamicVector GenerateDynamicArray(const int size) {
     dynamicMatrix vector = new double[size];
     assert(vector != nullptr);
     return vector;
 }
 
-void GenerateVectorArbitraryValue(double* vector, const int& size, const double& value) {
+void GenerateVectorArbitraryValue(double* vector, const int size, const double value) {
     for(int i = 0; i < size; ++i) {
         vector[i] = value;
     }
 }
 
-int GetBalanceSizeVector(const int& sizeOrigin, const int& countProcess) {
+int GetBalanceSizeVector(const int sizeOrigin, const int countProcess) {
     int buildNewSize = sizeOrigin;
     while(buildNewSize % countProcess != 0) {
         ++buildNewSize;
@@ -56,7 +56,7 @@ int GetBalanceSizeVector(const int& sizeOrigin, const int& countProcess) {
     return buildNewSize;
 }
 
-int GetNumberFillLine(const int& rank, const int& cntProcess, const int& newSize) {
+int GetNumberFillLine(const int rank, const int newSize) {
     int resultFillLine = 0;
     for (int startRank = 1; startRank < rank+1; ++startRank) {
         resultFillLine += newSize;
@@ -65,10 +65,10 @@ int GetNumberFillLine(const int& rank, const int& cntProcess, const int& newSize
 }
 
 
-dynamicVector GenerateSolutionVector(const int& newSize, const int& rank, const int& cntProcess) {
+dynamicVector GenerateSolutionVector(const int newSize, const int rank) {
     dynamicVector vector =  GenerateDynamicArray(newSize);
 
-    int  numberCntLine = GetNumberFillLine(rank, cntProcess, newSize);
+    int  numberCntLine = GetNumberFillLine(rank, newSize);
 
     for(int i = 0; i < newSize; ++i) {
         vector[i] = (numberCntLine+i < SIZE_MATRIX) ? ARBITRARY_VALUE : ZERO_VALUE;
@@ -84,17 +84,17 @@ dynamicVector GenerateSolutionVector(const int& newSize, const int& rank, const 
 // | 0 0 0 0 0 0 |    0
 
 // 5 5 5 5 5
-dynamicVector GenerateVectorRightParts(const int& newSize, const int& rank , const int& cntProcess) {
+dynamicVector GenerateVectorRightParts(const int newSize, const int rank) {
     dynamicVector vector = GenerateDynamicArray(newSize);
 
-    int  numberCntLine = GetNumberFillLine(rank, cntProcess, newSize);
+    int  numberCntLine = GetNumberFillLine(rank, newSize);
     for(int i = 0; i < newSize; ++i) {
         vector[i] = (numberCntLine+i < SIZE_MATRIX) ? SIZE_MATRIX + 1 : ZERO_VALUE;
     }
     return vector;
 }
 
-int GetCntCurrentFillLineMatrix(const int& rank, const int& cntProcess, const int& newSize) {
+int GetCntCurrentFillLineMatrix(const int rank, const int cntProcess, const int newSize) {
     int resultFillLine = 0;
     for (int startRank = 1; startRank < rank+1; ++startRank) {
         resultFillLine += newSize / cntProcess;
@@ -102,7 +102,7 @@ int GetCntCurrentFillLineMatrix(const int& rank, const int& cntProcess, const in
     return resultFillLine;
 }
 
-dynamicMatrix GeneratePartMatrix(const int& rank, const int& cntProcess, const int& fictitiousSize) {
+dynamicMatrix GeneratePartMatrix(const int rank, const int cntProcess, const int fictitiousSize) {
     int partFictitiousSizeMatrix = fictitiousSize * (fictitiousSize / cntProcess);
 
     dynamicMatrix partMatrix = GenerateDynamicArray(partFictitiousSizeMatrix);
@@ -111,10 +111,10 @@ dynamicMatrix GeneratePartMatrix(const int& rank, const int& cntProcess, const i
 
     int countRows = fictitiousSize / cntProcess;
     int index = countRows * rank;
-    int  numberCntLine = GetCntCurrentFillLineMatrix(rank, cntProcess,  fictitiousSize);
+    int numberCntLine = GetCntCurrentFillLineMatrix(rank, cntProcess, fictitiousSize);
 
     for (int i = 0, offset = 0; i < countRows; ++i, offset += fictitiousSize) {
-        if(numberCntLine+i+1 <= SIZE_MATRIX) {
+        if (numberCntLine + i + 1 <= SIZE_MATRIX) {
             for (int j = 0; j < SIZE_MATRIX; ++j) {
                 partMatrix[offset + j] = 1.0;
             }
@@ -143,14 +143,16 @@ dynamicVector MultiplyVectors(const dynamicVector vector1,
     return result;
 }
 
-dynamicVector MinusVectors(const dynamicVector vector1, const dynamicVector vector2, dynamicVector result, const int& size) {
+dynamicVector MinusVectors(const dynamicVector vector1, const dynamicVector vector2,
+                           dynamicVector result, const int size) {
     for(int i = 0; i < size; ++i) {
         result[i] = vector1[i] - vector2[i];
     }
     return result;
 }
 
-dynamicVector MultiplyVectorByConstant(const dynamicVector vector, dynamicVector result, const double& constant, const int& size) {
+dynamicVector MultiplyVectorByConstant(const dynamicVector vector, dynamicVector result,
+                                       const double constant, const int size) {
     for(int i = 0; i < size; ++i) {
         result[i] = vector[i] * constant;
     }
@@ -175,7 +177,8 @@ void CopyVector(dynamicVector copyVector, const dynamicVector sourceVector, cons
     }
 }
 
-void  DeleteVectors(dynamicVector v1, dynamicVector v2, dynamicVector v3, dynamicVector v4, dynamicVector v5, dynamicVector v6) {
+void  DeleteVectors(dynamicVector v1, dynamicVector v2, dynamicVector v3,
+                    dynamicVector v4, dynamicVector v5, dynamicVector v6) {
     delete[] v1;
     delete[] v2;
     delete[] v3;
@@ -186,16 +189,16 @@ void  DeleteVectors(dynamicVector v1, dynamicVector v2, dynamicVector v3, dynami
 
 //x^(n+1) = x^n – τ(Ax^n – b)
 
-double* IterativeMethod(const int& rank, const int& cntProcess) {
+double* IterativeMethod(const int rank, const int cntProcess) {
     int fictitiousSize = GetBalanceSizeVector(SIZE_MATRIX, cntProcess);
     int fixedSizePartVector = fictitiousSize / cntProcess;
 
     dynamicMatrix A = GeneratePartMatrix(rank, cntProcess, fictitiousSize);
     dynamicMatrix multiplyMatrixVector = GenerateDynamicArray(fictitiousSize);
 
-    dynamicVector x = GenerateSolutionVector(fixedSizePartVector, rank, cntProcess);
+    dynamicVector x = GenerateSolutionVector(fixedSizePartVector, rank);
 
-    dynamicVector b = GenerateVectorRightParts(fixedSizePartVector, rank, cntProcess);
+    dynamicVector b = GenerateVectorRightParts(fixedSizePartVector, rank);
 
 
     dynamicMatrix vectorResult = GenerateDynamicArray(fictitiousSize);
@@ -221,7 +224,7 @@ double* IterativeMethod(const int& rank, const int& cntProcess) {
 
         MPI_Allreduce(&findPartNorm, &resultNorm, SIZE_ONE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-       vectorUtility = MinusVectors(x, // t(A*x^n-b)
+       vectorUtility = MinusVectors(x,
                                     MultiplyVectorByConstant(vectorUtility, vectorUtility, τ, fixedSizePartVector),
                                     vectorUtility, fixedSizePartVector);
 
@@ -237,17 +240,16 @@ double* IterativeMethod(const int& rank, const int& cntProcess) {
 }
 
 int main(int argc, char* argv[]) {
+    MPI_Init(&argc, &argv);
     double startTime, endTime;
     startTime = MPI_Wtime();
-    MPI_Init(&argc, &argv);
+
     int rank = 0, cntProcess = 0;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &cntProcess);
 
     dynamicVector vector = IterativeMethod(rank, cntProcess);
-
-    MPI_Finalize();
 
     endTime = MPI_Wtime();
 
@@ -258,5 +260,6 @@ int main(int argc, char* argv[]) {
     }
 
     delete[] vector;
+    MPI_Finalize();
     return 0;
 }
