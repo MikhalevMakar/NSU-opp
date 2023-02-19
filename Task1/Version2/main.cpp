@@ -10,8 +10,7 @@ enum { SIZE_MATRIX = 3500,
        ZERO_VALUE = 0,
        ROOT = 0
 };
-//τ
-//ε
+
 const double τ =  1e-4;
 const double ε = 1e-7;
 
@@ -58,7 +57,7 @@ int GetBalanceSizeVector(const int sizeOrigin, const int countProcess) {
 
 int GetNumberFillLine(const int rank, const int newSize) {
     int resultFillLine = 0;
-    for (int startRank = 1; startRank < rank+1; ++startRank) {
+    for (int startRank = 1; startRank <= rank; ++startRank) {
         resultFillLine += newSize;
     }
     return resultFillLine;
@@ -76,14 +75,6 @@ dynamicVector GenerateSolutionVector(const int newSize, const int rank) {
     return vector;
 }
 
-// | 2 1 1 1 0 0 |    1
-// | 1 2 1 1 0 0 |    1
-// | 1 1 2 1 0 0 |    1
-// | 1 1 1 2 0 0 |    1
-// | 0 0 0 0 0 0 |    0
-// | 0 0 0 0 0 0 |    0
-
-// 5 5 5 5 5
 dynamicVector GenerateVectorRightParts(const int newSize, const int rank) {
     dynamicVector vector = GenerateDynamicArray(newSize);
 
@@ -96,7 +87,7 @@ dynamicVector GenerateVectorRightParts(const int newSize, const int rank) {
 
 int GetCntCurrentFillLineMatrix(const int rank, const int cntProcess, const int newSize) {
     int resultFillLine = 0;
-    for (int startRank = 1; startRank < rank+1; ++startRank) {
+    for (int startRank = 1; startRank <= rank; ++startRank) {
         resultFillLine += newSize / cntProcess;
     }
     return resultFillLine;
@@ -188,7 +179,6 @@ void  DeleteVectors(dynamicVector v1, dynamicVector v2, dynamicVector v3,
 }
 
 //x^(n+1) = x^n – τ(Ax^n – b)
-
 double* IterativeMethod(const int rank, const int cntProcess) {
     int fictitiousSize = GetBalanceSizeVector(SIZE_MATRIX, cntProcess);
     int fixedSizePartVector = fictitiousSize / cntProcess;
