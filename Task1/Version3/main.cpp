@@ -143,18 +143,6 @@ dynamicVector calcAxb(dynamicMatrix matrix, dynamicVector vector, dynamicVector 
     return result;
 }
 
-// | 2 1 1 1 0 0 |  * 1 1 => 2 1
-// | 2 1 1 1 0 0 | * 1 1 => 1 1
-// | 2 1 1 1 0 0 | * 0 0 => 0 0
-// | 2 1 1 1 0 0 |    1
-// | 1 2 1 1 0 0 |    1
-// | 1 1 2 1 0 0 |    1
-// | 1 1 1 2 0 0 |    1
-// | 0 0 0 0 0 0 |    0
-// | 0 0 0 0 0 0 |    0
-
-// 5 5 5 5 5
-
 dynamicVector MinusVectors(const dynamicVector vector1, const dynamicVector vector2,
                            dynamicVector result, const int size) {
     for(int i = 0; i < size; ++i) {
@@ -226,8 +214,6 @@ double* IterativeMethod(const int rank, const int cntProcess) {
 
         MPI_Allreduce(multiplyPartMatrixVector, multiplyMatrixVector,
                       fictitiousSize, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-//        std::cout << "wwwwwww\n";
-//        PrintVector(multiplyMatrixVector, fictitiousSize);
 
         MPI_Scatter(multiplyMatrixVector, fixedSizePartVector, MPI_DOUBLE, vectorUtility,
                     fixedSizePartVector, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
@@ -277,12 +263,3 @@ int main(int argc, char* argv[]) {
     MPI_Finalize();
     return 0;
 }
-
-// | 2 1 1 1 | 1
-// | 1 2 1 1 | 1
-
-// | 1 1 2 1 | 1
-// | 1 1 1 2 | 1
-
-// | 0 0 0 0 | 0
-// | 0 0 0 0 | 0
