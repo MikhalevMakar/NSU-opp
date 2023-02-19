@@ -81,9 +81,11 @@ dynamicMatrix GeneratePartMatrix(const int& rank, const int& cntProcess, int fic
             for (int j = 0; j < fictitiousSize; ++j) {
                 partMatrix[offset + j] = (numberCntLine+i+1 <= SIZE_MATRIX) ? 1.0 : ZERO_VALUE;
             }
+        
             if(numberCntLine+i+1 <= SIZE_MATRIX)
                 partMatrix[index + i] = 2.0;
-        index += fictitiousSize;
+        
+            index += fictitiousSize;
     }
 
     return partMatrix;
@@ -151,7 +153,6 @@ double* IterativeMethod(const int& rank, const int& cntProcess) {
 
     dynamicArray b = GenerateVectorRightParts(fictitiousSize);
     dynamicArray x = GenerateSolutionVector(fictitiousSize);
-
 
     dynamicMatrix vectorResult = GenerateDynamicArray(fictitiousSize);
     dynamicMatrix multiplyPartMatrix = GenerateDynamicArray(fictitiousSize / cntProcess);
