@@ -1,0 +1,3 @@
+/Users/natasamihaleva/NSU_OPP/Task1/Version3/cmake-build-debug/CMakeFiles/Version3.dir
+/Users/natasamihaleva/NSU_OPP/Task1/Version3/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/natasamihaleva/NSU_OPP/Task1/Version3/cmake-build-debug/CMakeFiles/rebuild_cache.dir
