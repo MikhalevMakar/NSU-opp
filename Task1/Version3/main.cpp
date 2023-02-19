@@ -196,19 +196,16 @@ double* IterativeMethod(const int rank, const int cntProcess) {
     dynamicMatrix multiplyMatrixVector = GenerateDynamicArray(fictitiousSize);
 
     dynamicVector x = GenerateSolutionVector(fixedSizePartVector, rank);
-
-
     dynamicVector b = GenerateVectorRightParts(fixedSizePartVector, rank);
-
 
     dynamicMatrix vectorResult = GenerateDynamicArray(fictitiousSize);
     dynamicMatrix vectorUtility = GenerateDynamicArray(fixedSizePartVector);
-
+    dynamicMatrix multiplyPartMatrixVector = GenerateDynamicArray(fictitiousSize);
+    
     double normPartB, normB, findPartNorm, resultNorm;
     normPartB = FormingFirstNorm(b, fixedSizePartVector);
     MPI_Allreduce(&normPartB, &normB, SIZE_ONE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-    dynamicMatrix multiplyPartMatrixVector = GenerateDynamicArray(fictitiousSize);
    do {
         calcAxb(A,  x,  multiplyPartMatrixVector, fictitiousSize, rank, cntProcess);
 
