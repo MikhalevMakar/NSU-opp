@@ -29,7 +29,7 @@ dynamicVector GenerateDynamicVector(const int size) {
 }
 
 void GenerateVectorArbitraryValue(dynamicVector vector, const int size, const double value) {
-    #pragma omp parallel for
+#pragma omp parallel for
     for(int i = 0; i < size; ++i) {
         vector[i] = value;
     }
@@ -50,7 +50,7 @@ dynamicVector GenerateVectorRightParts(const int size) {
 dynamicMatrix GenerateMatrix(const int size) {
     dynamicMatrix matrix = GenerateDynamicVector(size*size);
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for(int i = 0; i < size; ++i) {
         for(int j = 0; j < size; ++j) {
             matrix[size*i+j] = 1.0f;
@@ -63,8 +63,7 @@ dynamicMatrix GenerateMatrix(const int size) {
 dynamicVector MultiplyMatrixByVector(const dynamicMatrix matrix, const dynamicVector vector,
                                      dynamicVector result, const int size) {
     GenerateVectorArbitraryValue(result, size, ZERO_VALUE);
-
-    #pragma omp parallel for
+#pragma omp parallel for
     for(int i = 0; i < size; ++i) {
         for  (int j = 0; j < size; ++j) {
             result[i] += matrix[i*size+j] * vector[j];
@@ -75,7 +74,7 @@ dynamicVector MultiplyMatrixByVector(const dynamicMatrix matrix, const dynamicVe
 
 dynamicVector MinusVectors(const dynamicVector vector1, const dynamicVector vector2,
                           dynamicVector result, const int size) {
-    #pragma omp parallel for
+#pragma omp parallel for
     for(int i = 0; i < size; ++i) {
         result[i] = vector1[i] - vector2[i];
     }
@@ -84,7 +83,7 @@ dynamicVector MinusVectors(const dynamicVector vector1, const dynamicVector vect
 
 dynamicVector MultiplyVectorByConstant(const dynamicVector vector, const double constant,
                                        dynamicVector result, const int size) {
-    #pragma omp parallel for
+#pragma omp parallel for
     for(int i = 0; i < size; ++i) {
         result[i] = vector[i] * constant;
     }
@@ -92,11 +91,17 @@ dynamicVector MultiplyVectorByConstant(const dynamicVector vector, const double 
 }
 
 double FormingFirstNorm(const dynamicVector vector, const int size) {
-    double sumVector = 0;
-    #pragma omp parallel for
-    for(int i = 0; i < size; ++i) {
-        sumVector += vector[i]*vector[i];
+    double sumVector = 0.0f;
+#pragma omp parallel
+    {
+    double curSumVector = 0.0f;
+    for (int i = 0; i < size; ++i) {
+        curSumVector += vector[i] * vector[i];
     }
+
+#pragma omp atomic
+    sumVector += curSumVector;
+}
     return sqrt(sumVector);
 }
 
@@ -105,7 +110,7 @@ bool IsFirstNormMoreEpsilon(const double v1, const double v2) {
 }
 
 void CopyVector(dynamicVector copyVector, const dynamicVector sourceVector, const int size) {
-    #pragma omp parallel for
+#pragma omp parallel for
     for(int i = 0; i < size; ++i) {
         copyVector [i] = sourceVector[i];
     }
