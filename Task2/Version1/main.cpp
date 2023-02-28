@@ -92,16 +92,10 @@ dynamicVector MultiplyVectorByConstant(const dynamicVector vector, const double 
 
 double FormingFirstNorm(const dynamicVector vector, const int size) {
     double sumVector = 0.0f;
-#pragma omp parallel
-    {
-    double curSumVector = 0.0f;
+#pragma omp parallel for reduction(+ : sumVector)
     for (int i = 0; i < size; ++i) {
-        curSumVector += vector[i] * vector[i];
+        sumVector += vector[i] * vector[i];
     }
-
-#pragma omp atomic
-    sumVector += curSumVector;
-}
     return sqrt(sumVector);
 }
 
