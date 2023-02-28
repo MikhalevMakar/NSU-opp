@@ -1,0 +1,7 @@
+/usr/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" -S /tmp/tmp.v25c7svKbI -B /tmp/tmp.v25c7svKbI/cmake-build-debug-remote-host-1
+-- Found OpenMP_C: -fopenmp  
+-- Found OpenMP_CXX: -fopenmp  
+-- Found OpenMP: TRUE   
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/tmp.v25c7svKbI/cmake-build-debug-remote-host-1
