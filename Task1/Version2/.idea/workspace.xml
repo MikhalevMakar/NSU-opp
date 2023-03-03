@@ -21,11 +21,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="638f4bdc-01ba-49ed-90bd-193b835f805d" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../Version1/cmake-build-debug/.ninja_deps" beforeDir="false" afterPath="$PROJECT_DIR$/../Version1/cmake-build-debug/.ninja_deps" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Version1/cmake-build-debug/.ninja_log" beforeDir="false" afterPath="$PROJECT_DIR$/../Version1/cmake-build-debug/.ninja_log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Version1/cmake-build-debug/CMakeFiles/Version1.dir/main.cpp.o" beforeDir="false" afterPath="$PROJECT_DIR$/../Version1/cmake-build-debug/CMakeFiles/Version1.dir/main.cpp.o" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../Version1/cmake-build-debug/Testing/Temporary/LastTest.log" beforeDir="false" afterPath="$PROJECT_DIR$/../Version1/cmake-build-debug/Testing/Temporary/LastTest.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Version1/cmake-build-debug/Version1" beforeDir="false" afterPath="$PROJECT_DIR$/../Version1/cmake-build-debug/Version1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Version1/main" beforeDir="false" afterPath="$PROJECT_DIR$/../Version1/main" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Version1/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../Version1/main.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Version2.dir/main.cpp.o" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Version2.dir/main.cpp.o" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/Version2" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/Version2" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Version3/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../Version3/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Task2/Version2/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Task2/Version2/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -96,6 +106,9 @@
       <workItem from="1676705792247" duration="5000" />
       <workItem from="1676706061539" duration="1000" />
       <workItem from="1676784522007" duration="57000" />
+      <workItem from="1677731568354" duration="2728000" />
+      <workItem from="1677764372915" duration="598000" />
+      <workItem from="1677817215872" duration="358000" />
     </task>
     <servers />
   </component>

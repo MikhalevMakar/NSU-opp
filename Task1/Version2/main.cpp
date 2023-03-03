@@ -4,15 +4,15 @@
 #include <cmath>
 #include <cassert>
 
-enum { SIZE_MATRIX = 3500,
+enum { SIZE_VECTOR = 2048,
        ARBITRARY_VALUE = 0,
        SIZE_ONE = 1,
        ZERO_VALUE = 0,
        ROOT = 0
 };
 
-const double τ =  1e-4;
-const double ε = 1e-7;
+const double tau =  1e-5;
+const double epsilon = 1e-7;
 
 typedef double* dynamicVector;
 typedef double* dynamicMatrix;
@@ -24,24 +24,13 @@ void PrintVector(dynamicVector vector, const int size) {
     printf("\n");
 }
 
-__attribute__((unused)) void PrintMatrix(dynamicVector vector, const int size, const int cntProcess) {
-    for(int j = 0; j < size/cntProcess; ++j) {
-        for(int i = 0; i < size; ++i) {
-            std::cout << (double) vector[j*size+i] << " ";
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
-
-
 dynamicVector GenerateDynamicArray(const int size) {
     dynamicMatrix vector = new double[size];
-    assert(vector != nullptr);
+    assert(vector != NULL);
     return vector;
 }
 
-void GenerateVectorArbitraryValue(double* vector, const int size, const double value) {
+void GenerateVectorArbitraryValue(dynamicVector vector, const int size, const double value) {
     for(int i = 0; i < size; ++i) {
         vector[i] = value;
     }
@@ -70,7 +59,7 @@ dynamicVector GenerateSolutionVector(const int newSize, const int rank) {
     int  numberCntLine = GetNumberFillLine(rank, newSize);
 
     for(int i = 0; i < newSize; ++i) {
-        vector[i] = (numberCntLine+i < SIZE_MATRIX) ? ARBITRARY_VALUE : ZERO_VALUE;
+        vector[i] = (numberCntLine+i < SIZE_VECTOR) ? ARBITRARY_VALUE : ZERO_VALUE;
     }
     return vector;
 }
@@ -80,7 +69,7 @@ dynamicVector GenerateVectorRightParts(const int newSize, const int rank) {
 
     int  numberCntLine = GetNumberFillLine(rank, newSize);
     for(int i = 0; i < newSize; ++i) {
-        vector[i] = (numberCntLine+i < SIZE_MATRIX) ? SIZE_MATRIX + 1 : ZERO_VALUE;
+        vector[i] = (numberCntLine+i < SIZE_VECTOR) ? SIZE_VECTOR + 1 : ZERO_VALUE;
     }
     return vector;
 }
@@ -105,8 +94,8 @@ dynamicMatrix GeneratePartMatrix(const int rank, const int cntProcess, const int
     int numberCntLine = GetCntCurrentFillLineMatrix(rank, cntProcess, fictitiousSize);
 
     for (int i = 0, offset = 0; i < countRows; ++i, offset += fictitiousSize) {
-        if (numberCntLine + i + 1 <= SIZE_MATRIX) {
-            for (int j = 0; j < SIZE_MATRIX; ++j) {
+        if (numberCntLine + i + 1 <= SIZE_VECTOR) {
+            for (int j = 0; j < SIZE_VECTOR; ++j) {
                 partMatrix[offset + j] = 1.0;
             }
             partMatrix[index + i] = 2.0;
@@ -150,7 +139,7 @@ dynamicVector MultiplyVectorByConstant(const dynamicVector vector, dynamicVector
     return result;
 }
 
-double FormingFirstNorm(const dynamicVector vector, const int& size) {
+double FormingEuclideanNorm(const dynamicVector vector, const int& size) {
     double sumVector = 0;
     for(int i = 0; i < size; ++i) {
         sumVector += vector[i]*vector[i];
@@ -159,7 +148,7 @@ double FormingFirstNorm(const dynamicVector vector, const int& size) {
 }
 
 bool IsFirstNormMoreEpsilon(const double v1, const double v2) {
-    return !((v1/v2) < ε);
+    return !((v1/v2) < epsilon);
 }
 
 void CopyVector(dynamicVector copyVector, const dynamicVector sourceVector, const int& size) {
@@ -178,9 +167,9 @@ void  DeleteVectors(dynamicVector v1, dynamicVector v2, dynamicVector v3,
     delete[] v6;
 }
 
-//x^(n+1) = x^n – τ(Ax^n – b)
+//x^(n+1) = x^n – tau(Ax^n – b)
 double* IterativeMethod(const int rank, const int cntProcess) {
-    int fictitiousSize = GetBalanceSizeVector(SIZE_MATRIX, cntProcess);
+    int fictitiousSize = GetBalanceSizeVector(SIZE_VECTOR, cntProcess);
     int fixedSizePartVector = fictitiousSize / cntProcess;
 
     dynamicMatrix A = GeneratePartMatrix(rank, cntProcess, fictitiousSize);
@@ -195,7 +184,7 @@ double* IterativeMethod(const int rank, const int cntProcess) {
     dynamicMatrix vectorUtility = GenerateDynamicArray(fixedSizePartVector);
 
     double normPartB, normB, findPartNorm, resultNorm;
-    normPartB = FormingFirstNorm(b, fixedSizePartVector);
+    normPartB = FormingEuclideanNorm(b, fixedSizePartVector);
     MPI_Allreduce(&normPartB, &normB, SIZE_ONE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
     dynamicMatrix multiplyPartMatrixVector = GenerateDynamicArray(fictitiousSize);
@@ -210,12 +199,12 @@ double* IterativeMethod(const int rank, const int cntProcess) {
 
         vectorUtility = MinusVectors(vectorUtility, b, vectorUtility, fixedSizePartVector);
 
-        findPartNorm = FormingFirstNorm(vectorUtility, fixedSizePartVector);
+        findPartNorm = FormingEuclideanNorm(vectorUtility, fixedSizePartVector);
 
         MPI_Allreduce(&findPartNorm, &resultNorm, SIZE_ONE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
        vectorUtility = MinusVectors(x,
-                                    MultiplyVectorByConstant(vectorUtility, vectorUtility, τ, fixedSizePartVector),
+                                    MultiplyVectorByConstant(vectorUtility, vectorUtility, tau, fixedSizePartVector),
                                     vectorUtility, fixedSizePartVector);
 
         CopyVector(x, vectorUtility, fixedSizePartVector);
@@ -245,7 +234,7 @@ int main(int argc, char* argv[]) {
 
     if(rank == 0) {
         printf("RESULT VECTOR\n");
-        PrintVector(vector, SIZE_MATRIX);
+        PrintVector(vector, SIZE_VECTOR);
         std::cout << "\nTIME: " << endTime - startTime << std::endl;
     }
 
