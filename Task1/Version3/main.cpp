@@ -4,15 +4,15 @@
 #include <cmath>
 #include <cassert>
 
-enum { SIZE_MATRIX = 350,
-    ARBITRARY_VALUE = 0,
-    SIZE_ONE = 1,
-    ZERO_VALUE = 0,
-    ROOT = 0,
-    SEND_TAG = 24
+enum { SIZE_MATRIX = 1024,
+       ARBITRARY_VALUE = 0,
+       SIZE_ONE = 1,
+       ZERO_VALUE = 0,
+       ROOT = 0,
+       SEND_TAG = 24
 };
 
-const double τ =  1e-4;
+const double τ =  1e-5;
 const double ε = 1e-7;
 
 typedef double* dynamicVector;
@@ -24,17 +24,6 @@ void PrintVector(dynamicVector vector, const int size) {
     }
     printf("\n");
 }
-
-__attribute__((unused)) void PrintMatrix(dynamicVector vector, const int size, const int cntProcess) {
-    for(int j = 0; j < size/cntProcess; ++j) {
-        for(int i = 0; i < size; ++i) {
-            std::cout << (double) vector[j*size+i] << " ";
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
-
 
 dynamicVector GenerateDynamicArray(const int size) {
     dynamicMatrix vector = new double[size];
@@ -117,29 +106,39 @@ dynamicMatrix GeneratePartMatrix(const int rank, const int cntProcess, const int
     return partMatrix;
 }
 
+void GenerateVectorOffset(std::vector<int>& vectorOffset, int size, int cntProcess) {
+    for (int i = 0, offset = 0; i < cntProcess; ++i) {
+        vectorOffset[i] = offset;
+        offset += size/cntProcess;
+    }
+}
+
 dynamicVector calcAxb(dynamicMatrix matrix, dynamicVector vector, dynamicVector result,
                       const int fictitiousSize, const int rank, const int cntProcess) {
-    GenerateVectorArbitraryValue(result, fictitiousSize, ZERO_VALUE);
-
     int  sizePartVector = fictitiousSize / cntProcess;
+    GenerateVectorArbitraryValue(result, sizePartVector, ZERO_VALUE);
 
     int srcRank = (rank + 1) % cntProcess;
     int destRank =  (rank != ROOT)  ? rank - 1 : cntProcess - 1;
-    int indexVector = 0,  indexMatrix = 0;
+    int indexMatrix = 0;
+
+    std::vector<int> vectorOffset;
+    vectorOffset.resize(cntProcess);
+    GenerateVectorOffset(vectorOffset, fictitiousSize, cntProcess);
 
     for(int i = 0; i < cntProcess; ++i) {
         for(int k = 0; k < fictitiousSize/cntProcess; ++k) {
             for (int j = 0; j < sizePartVector; ++j) {
-                indexVector = (rank * sizePartVector + i * sizePartVector + j) % fictitiousSize;
-                indexMatrix = (rank * sizePartVector + i * sizePartVector + k * fictitiousSize + j) % (sizePartVector * fictitiousSize);
-                result[indexVector] += matrix[indexMatrix] * vector[j];
+                indexMatrix =  k * fictitiousSize + vectorOffset[(rank + i) % cntProcess] + j;
+                result[k] += matrix[indexMatrix] * vector[j];
             }
         }
         if(destRank != srcRank) {
-              MPI_Sendrecv_replace(vector, sizePartVector, MPI_DOUBLE, destRank, SEND_TAG,
+            MPI_Sendrecv_replace(vector, sizePartVector, MPI_DOUBLE, destRank, SEND_TAG,
                                  srcRank, SEND_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
     }
+
     return result;
 }
 
@@ -159,7 +158,7 @@ dynamicVector MultiplyVectorByConstant(const dynamicVector vector, dynamicVector
     return result;
 }
 
-double FormingFirstNorm(const dynamicVector vector, const int& size) {
+double FormingEuclideanNorm(const dynamicVector vector, const int& size) {
     double sumVector = 0;
     for(int i = 0; i < size; ++i) {
         sumVector += vector[i]*vector[i];
@@ -201,23 +200,17 @@ double* IterativeMethod(const int rank, const int cntProcess) {
     dynamicMatrix vectorResult = GenerateDynamicArray(fictitiousSize);
     dynamicMatrix vectorUtility = GenerateDynamicArray(fixedSizePartVector);
     dynamicMatrix multiplyPartMatrixVector = GenerateDynamicArray(fictitiousSize);
-    
+
     double normPartB, normB, findPartNorm, resultNorm;
-    normPartB = FormingFirstNorm(b, fixedSizePartVector);
+    normPartB = FormingEuclideanNorm(b, fixedSizePartVector);
     MPI_Allreduce(&normPartB, &normB, SIZE_ONE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-   do {
-        calcAxb(A,  x,  multiplyPartMatrixVector, fictitiousSize, rank, cntProcess);
-
-        MPI_Allreduce(multiplyPartMatrixVector, multiplyMatrixVector,
-                      fictitiousSize, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-        MPI_Scatter(multiplyMatrixVector, fixedSizePartVector, MPI_DOUBLE, vectorUtility,
-                    fixedSizePartVector, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+    do {
+        calcAxb(A, x, vectorUtility, fictitiousSize, rank, cntProcess);
 
         vectorUtility = MinusVectors(vectorUtility, b, vectorUtility, fixedSizePartVector);
 
-        findPartNorm = FormingFirstNorm(vectorUtility, fixedSizePartVector);
+        findPartNorm = FormingEuclideanNorm(vectorUtility, fixedSizePartVector);
 
         MPI_Allreduce(&findPartNorm, &resultNorm, SIZE_ONE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
@@ -227,7 +220,7 @@ double* IterativeMethod(const int rank, const int cntProcess) {
 
         CopyVector(x, vectorUtility, fixedSizePartVector);
 
-   } while(IsFirstNormMoreEpsilon(sqrt(resultNorm), sqrt(normB)));
+    } while(IsFirstNormMoreEpsilon(sqrt(resultNorm), sqrt(normB)));
 
     MPI_Gather(vectorUtility, fixedSizePartVector, MPI_DOUBLE, vectorResult,
                fixedSizePartVector, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
