@@ -1,0 +1,7 @@
+/usr/bin/cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" -S /tmp/tmp.8DHWT1ZIqo -B /tmp/tmp.8DHWT1ZIqo/cmake-build-release-remote-host-1
+-- Found OpenMP_C: -fopenmp  
+-- Found OpenMP_CXX: -fopenmp  
+-- Found OpenMP: TRUE   
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/tmp.8DHWT1ZIqo/cmake-build-release-remote-host-1

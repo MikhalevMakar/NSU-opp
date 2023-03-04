@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/tmp/tmp.8DHWT1ZIqo/main.cpp
+iostream
+-
+vector
+-
+cmath
+-
+assert.h
+-
+omp.h
+-
+
