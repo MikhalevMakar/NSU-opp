@@ -28,12 +28,6 @@ dynamicArray GenerateDynamicArray(int size) {
     return vector;
 }
 
-void GenerateVectorArbitraryValue(double* vector, int size, double value) {
-    for(int i = 0; i < size; ++i) {
-        vector[i] = value;
-    }
-}
-
 dynamicArray GenerateSolutionVector(int newSize) {
     dynamicArray vector =  GenerateDynamicArray(newSize);
 
@@ -78,14 +72,14 @@ dynamicMatrix GeneratePartMatrix(const int& rank, const int& cntProcess, int fic
     int  numberCntLine = GetCntCurrentFillLineMatrix(rank, cntProcess,  fictitiousSize);
 
     for (int i = 0, offset = 0; i < fictitiousSize/cntProcess; ++i, offset += fictitiousSize) {
-            for (int j = 0; j < fictitiousSize; ++j) {
-                partMatrix[offset + j] = (numberCntLine+i+1 <= SIZE_MATRIX) ? 1.0 : ZERO_VALUE;
-            }
-        
-            if(numberCntLine+i+1 <= SIZE_MATRIX)
-                partMatrix[index + i] = 2.0;
-        
-            index += fictitiousSize;
+        for (int j = 0; j < fictitiousSize; ++j) {
+            partMatrix[offset + j] = (numberCntLine+i+1 <= SIZE_MATRIX) ? 1.0 : ZERO_VALUE;
+        }
+
+        if(numberCntLine+i+1 <= SIZE_MATRIX)
+            partMatrix[index + i] = 2.0;
+
+        index += fictitiousSize;
     }
 
     return partMatrix;
@@ -93,8 +87,8 @@ dynamicMatrix GeneratePartMatrix(const int& rank, const int& cntProcess, int fic
 
 dynamicArray MultiplyVectors(const dynamicArray vector1, const dynamicArray vector2,
                              dynamicArray result, const int& size, const int& cntProcess) {
-    GenerateVectorArbitraryValue(result, size / cntProcess, ZERO_VALUE);
     for(int i = 0; i < size / cntProcess; ++i) {
+        result[i] = 0;
         for  (int j = 0; j < size; ++j) {
             result[i] += vector1[j+i*size] * vector2[j];
         }
@@ -193,8 +187,6 @@ int main(int argc, char* argv[]) {
 
     dynamicArray vector = IterativeMethod(rank, cntProcess);
 
-
-
     endTime = MPI_Wtime();
 
     if(rank == 0) {
@@ -202,6 +194,7 @@ int main(int argc, char* argv[]) {
         PrintVector(vector, SIZE_MATRIX);
         std::cout << "\nTIME: " << endTime - startTime << std::endl;
     }
+
     delete[] vector;
     MPI_Finalize();
     return 0;
