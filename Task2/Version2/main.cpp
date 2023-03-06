@@ -5,12 +5,12 @@
 #include <omp.h>
 
 enum {
-    SIZE_VECTOR = 49,
+    SIZE_VECTOR = 1029,
     ARBITRARY_VALUE = 0
 };
 
 const double tau = 1e-5;
-const double epsilon = 1e-6;
+const double epsilon = 1e-5;
 
 typedef double *dynamicVector;
 typedef double *dynamicMatrix;
@@ -61,6 +61,7 @@ dynamicMatrix GenerateMatrix(const int size) {
 void MultiplyMatrixByVector(const dynamicMatrix matrix, const  dynamicVector vector,
                             dynamicVector result, const int cntLineMatrix) {
     for (int i = 0; i < cntLineMatrix; ++i) {
+        result[i] = 0;
         for (int j = 0; j < SIZE_VECTOR; ++j) {
             result[i] += matrix[i * SIZE_VECTOR + j] * vector[j];
         }
@@ -110,15 +111,18 @@ void DeleteVectors(const dynamicMatrix v1, const dynamicVector v2, const dynamic
     delete[] v6;
 }
 
-std::vector<int> GetCountLine(int countThread, int sizeVector) {
-    std::vector<int> vectorCountLine;
+void  GetCountLine(std::vector<int>& vectorCountLine, std::vector<int>& vectorOffset,
+                   int countThread, int sizeVector) {
+    vectorOffset.resize(countThread);
     vectorCountLine.resize(countThread, sizeVector / countThread);
     int countPartLine = sizeVector % countThread;
-    for (int i = 0; i < countThread; ++i) {
+
+    for (int i = 0, offset = 0; i < countThread; offset += vectorCountLine[i++]) {
         if (i < countPartLine) ++vectorCountLine[i];
+        vectorOffset[i] = offset;
     }
-    return vectorCountLine;
 }
+
 
 dynamicVector IterativeMethod(const int size) {
     dynamicMatrix A = GenerateMatrix(size);
@@ -131,8 +135,8 @@ dynamicVector IterativeMethod(const int size) {
     dynamicMatrix vectorUtility = GenerateDynamicVector(size);
     dynamicMatrix compareVectors = GenerateDynamicVector(size);
 
-    double normB = FormingEuclideanNorm(b, size);
-    std::vector<int> vectorCountLine;
+    double normB = sqrt(FormingEuclideanNorm(b, size));
+    std::vector<int> vectorCountLine, vectorOffset;
     bool run;
     double firstNorm, partFirstNorm;
 
@@ -142,48 +146,45 @@ dynamicVector IterativeMethod(const int size) {
     int numThread = omp_get_num_threads();
 
 #pragma omp single
-{
-    vectorCountLine = GetCountLine(numThread, SIZE_VECTOR);
-    for(auto value : vectorCountLine) {
-        std::cout << value << " ";
-    }
-    std::cout << "\n size: " <<  vectorCountLine.size() << std::endl;
-}
-    int sizePartVector = size / numThread;
-    int offsetMatrix = vectorCountLine[currentThread] * size;
-    int offsetVector = currentThread * sizePartVector;
+    GetCountLine(vectorCountLine, vectorOffset, numThread, SIZE_VECTOR);
 
-    //do {
-      MultiplyMatrixByVector(A + offsetMatrix,
-                                   x,
-                                   multiplyPartMatrix + offsetVector,
-                                   sizePartVector);
+    do {
+      MultiplyMatrixByVector(A + vectorOffset[currentThread]*size,
+                             x,
+                             multiplyPartMatrix + vectorOffset[currentThread],
+                             vectorCountLine[currentThread]);
+
+        MinusVectors(multiplyPartMatrix + vectorOffset[currentThread],
+                     b + vectorOffset[currentThread],
+                     compareVectors + vectorOffset[currentThread],
+                     vectorCountLine[currentThread]);
+
+        MultiplyVectorByConstant(compareVectors + vectorOffset[currentThread], tau,
+                                 vectorResult + vectorOffset[currentThread],
+                                 vectorCountLine[currentThread]);
+
 #pragma omp barrier
-        //if(currentThread == 12) PrintVector(multiplyPartMatrix, size);
+        MinusVectors(x + vectorOffset[currentThread],
+                     vectorResult + vectorOffset[currentThread],
+                     vectorResult + vectorOffset[currentThread],
+                     vectorCountLine[currentThread]);
 
-        MinusVectors(multiplyPartMatrix + offsetVector,
-                     b + offsetVector, compareVectors + offsetVector, sizePartVector);
-
-        MultiplyVectorByConstant(compareVectors + offsetVector, tau, vectorResult + offsetVector, sizePartVector);
-
-        MinusVectors(x + offsetVector,
-                     vectorResult + offsetVector,
-                     vectorResult + offsetVector,
-                     sizePartVector);
-
-        CopyVector(x + offsetVector, vectorResult + offsetVector, sizePartVector);
-
-        partFirstNorm = FormingEuclideanNorm(compareVectors + offsetVector, sizePartVector);
+        CopyVector(x + vectorOffset[currentThread],
+                   vectorResult + vectorOffset[currentThread],
+                   vectorCountLine[currentThread]);
+#pragma omp barrier
+        partFirstNorm = FormingEuclideanNorm(compareVectors + vectorOffset[currentThread],
+                                             vectorCountLine[currentThread]);
 
 #pragma omp single
         firstNorm = 0.0f;
+
 #pragma omp atomic
         firstNorm += partFirstNorm;
 
-#pragma omp barrier
 #pragma omp single
         run = IsFirstNormMoreEpsilon(sqrt(firstNorm), normB);
-    //} while (run);
+    } while (run);
 }
     DeleteVectors(A, b, x, multiplyPartMatrix, vectorUtility, compareVectors);
     return vectorResult;
@@ -202,4 +203,4 @@ int main(int argc, char *argv[]) {
 
     delete[] vector;
     return 0;
-}
+}   
