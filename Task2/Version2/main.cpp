@@ -149,10 +149,10 @@ dynamicVector IterativeMethod(const int size) {
     GetCountLine(vectorCountLine, vectorOffset, numThread, SIZE_VECTOR);
 
     do {
-      MultiplyMatrixByVector(A + vectorOffset[currentThread]*size,
-                             x,
-                             multiplyPartMatrix + vectorOffset[currentThread],
-                             vectorCountLine[currentThread]);
+        MultiplyMatrixByVector(A + vectorOffset[currentThread]*size,
+                              x,
+                              multiplyPartMatrix + vectorOffset[currentThread],
+                              vectorCountLine[currentThread]);
 
         MinusVectors(multiplyPartMatrix + vectorOffset[currentThread],
                      b + vectorOffset[currentThread],
@@ -175,7 +175,6 @@ dynamicVector IterativeMethod(const int size) {
 #pragma omp barrier
         partFirstNorm = FormingEuclideanNorm(compareVectors + vectorOffset[currentThread],
                                              vectorCountLine[currentThread]);
-
 #pragma omp single
         firstNorm = 0.0f;
 
@@ -203,4 +202,4 @@ int main(int argc, char *argv[]) {
 
     delete[] vector;
     return 0;
-}   
+}
