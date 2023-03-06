@@ -1,3 +1,0 @@
-/tmp/tmp.28tiy8O0S2/cmake-build-debug-remote-host/CMakeFiles/rebuild_cache.dir
-/tmp/tmp.28tiy8O0S2/cmake-build-debug-remote-host/CMakeFiles/edit_cache.dir
-/tmp/tmp.28tiy8O0S2/cmake-build-debug-remote-host/CMakeFiles/Version1.dir
