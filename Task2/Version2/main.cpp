@@ -5,7 +5,7 @@
 #include <omp.h>
 
 enum {
-    SIZE_VECTOR = 25,
+    SIZE_VECTOR = 49,
     ARBITRARY_VALUE = 0
 };
 
@@ -112,7 +112,7 @@ void DeleteVectors(const dynamicMatrix v1, const dynamicVector v2, const dynamic
 
 std::vector<int> GetCountLine(int countThread, int sizeVector) {
     std::vector<int> vectorCountLine;
-    vectorCountLine.resize(sizeVector * sizeVector, sizeVector / countThread);
+    vectorCountLine.resize(countThread, sizeVector / countThread);
     int countPartLine = sizeVector % countThread;
     for (int i = 0; i < countThread; ++i) {
         if (i < countPartLine) ++vectorCountLine[i];
@@ -147,21 +147,17 @@ dynamicVector IterativeMethod(const int size) {
     for(auto value : vectorCountLine) {
         std::cout << value << " ";
     }
-
-    std::cout << "\n size:  " <<  vectorCountLine.size() << std::endl;
+    std::cout << "\n size: " <<  vectorCountLine.size() << std::endl;
 }
-
     int sizePartVector = size / numThread;
     int offsetMatrix = vectorCountLine[currentThread] * size;
     int offsetVector = currentThread * sizePartVector;
 
     //do {
-
-            MultiplyMatrixByVector(A + offsetMatrix,
+      MultiplyMatrixByVector(A + offsetMatrix,
                                    x,
                                    multiplyPartMatrix + offsetVector,
                                    sizePartVector);
-
 #pragma omp barrier
         //if(currentThread == 12) PrintVector(multiplyPartMatrix, size);
 
@@ -194,7 +190,6 @@ dynamicVector IterativeMethod(const int size) {
 }
 
 int main(int argc, char *argv[]) {
-
     double startTime = omp_get_wtime();
 
     dynamicVector vector = IterativeMethod(SIZE_VECTOR);
