@@ -113,7 +113,7 @@
         }
     }
 
-    dynamicVector calcAxb(dynamicMatrix matrix, dynamicVector vector, dynamicVector result,
+    dynamicVector MultiplyMatrixByVector(dynamicMatrix matrix, dynamicVector vector, dynamicVector result,
                           const int fictitiousSize, const int rank, const int cntProcess) {
         int  sizePartVector = fictitiousSize / cntProcess;
         GenerateVectorArbitraryValue(result, sizePartVector, ZERO_VALUE);
@@ -204,17 +204,17 @@
         MPI_Allreduce(&normPartB, &normB, SIZE_ONE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
         do {
-            calcAxb(A, x, vectorUtility, fictitiousSize, rank, cntProcess);
+            MultiplyMatrixByVector(A, x, vectorUtility, fictitiousSize, rank, cntProcess);
 
-            vectorUtility = MinusVectors(vectorUtility, b, vectorUtility, fixedSizePartVector);
+            MinusVectors(vectorUtility, b, vectorUtility, fixedSizePartVector);
 
             findPartNorm = FormingEuclideanNorm(vectorUtility, fixedSizePartVector);
 
             MPI_Allreduce(&findPartNorm, &resultNorm, SIZE_ONE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-            vectorUtility = MinusVectors(x,
-                                         MultiplyVectorByConstant(vectorUtility, vectorUtility, tau, fixedSizePartVector),
-                                         vectorUtility, fixedSizePartVector);
+            MultiplyVectorByConstant(vectorUtility, vectorUtility, tau, fixedSizePartVector);
+
+            MinusVectors(x, vectorUtility, vectorUtility, fixedSizePartVector);
 
             CopyVector(x, vectorUtility, fixedSizePartVector);
 
