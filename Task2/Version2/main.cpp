@@ -29,6 +29,7 @@ dynamicVector GenerateDynamicVector(const int size) {
 }
 
 void GenerateVectorArbitraryValue(dynamicVector vector, const int size, const double value) {
+#pragma omp parallel for
     for (int i = 0; i < size; ++i) {
         vector[i] = value;
     }
@@ -48,7 +49,7 @@ dynamicVector GenerateVectorRightParts(const int size) {
 
 dynamicMatrix GenerateMatrix(const int size) {
     dynamicMatrix matrix = GenerateDynamicVector(size * size);
-
+#pragma omp parallel for
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
             matrix[size * i + j] = 1.0f;
@@ -124,7 +125,6 @@ void  GetCountLine(std::vector<int>& vectorCountLine, std::vector<int>& vectorOf
     }
 }
 
-
 dynamicVector IterativeMethod(const int size) {
     dynamicMatrix A = GenerateMatrix(size);
 
@@ -142,7 +142,7 @@ dynamicVector IterativeMethod(const int size) {
     double firstNorm, partFirstNorm;
 
 #pragma omp parallel private(partFirstNorm)
-    {
+{
         int currentThread = omp_get_thread_num();
         int numThread = omp_get_num_threads();
 
@@ -164,7 +164,6 @@ dynamicVector IterativeMethod(const int size) {
                                      vectorResult + vectorOffset[currentThread],
                                      vectorCountLine[currentThread]);
 
-#pragma omp barrier
             MinusVectors(x + vectorOffset[currentThread],
                          vectorResult + vectorOffset[currentThread],
                          vectorResult + vectorOffset[currentThread],
