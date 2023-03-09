@@ -133,10 +133,8 @@ dynamicVector calcAxb(dynamicMatrix matrix, dynamicVector vector, dynamicVector 
                 result[k] += matrix[indexMatrix] * vector[j];
             }
         }
-        if(destRank != srcRank) {
-            MPI_Sendrecv_replace(vector, sizePartVector, MPI_DOUBLE, destRank, SEND_TAG,
+        MPI_Sendrecv_replace(vector, sizePartVector, MPI_DOUBLE, destRank, SEND_TAG,
                                  srcRank, SEND_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        }
     }
 
     return result;
