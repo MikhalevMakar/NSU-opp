@@ -5,7 +5,7 @@
 #include <omp.h>
 
 enum {
-    SIZE_VECTOR = 1029,
+    SIZE_VECTOR = 35,
     ARBITRARY_VALUE = 0
 };
 
@@ -113,12 +113,13 @@ void DeleteVectors(const dynamicMatrix v1, const dynamicVector v2, const dynamic
 
 void  GetCountLine(std::vector<int>& vectorCountLine, std::vector<int>& vectorOffset,
                    int countThread, int sizeVector) {
-    vectorOffset.resize(countThread);
     vectorCountLine.resize(countThread, sizeVector / countThread);
-    int countPartLine = sizeVector % countThread;
-
+    vectorOffset.resize(countThread);
+    int remainder = sizeVector % countThread;
+    for(int i = 0; i < remainder; ++i) {
+        vectorCountLine[i]++;
+    }
     for (int i = 0, offset = 0; i < countThread; offset += vectorCountLine[i++]) {
-        if (i < countPartLine) ++vectorCountLine[i];
         vectorOffset[i] = offset;
     }
 }
@@ -141,50 +142,50 @@ dynamicVector IterativeMethod(const int size) {
     double firstNorm, partFirstNorm;
 
 #pragma omp parallel private(partFirstNorm)
-{
-    int currentThread = omp_get_thread_num();
-    int numThread = omp_get_num_threads();
+    {
+        int currentThread = omp_get_thread_num();
+        int numThread = omp_get_num_threads();
 
 #pragma omp single
-    GetCountLine(vectorCountLine, vectorOffset, numThread, SIZE_VECTOR);
+        GetCountLine(vectorCountLine, vectorOffset, numThread, SIZE_VECTOR);
 
-    do {
-        MultiplyMatrixByVector(A + vectorOffset[currentThread]*size,
-                              x,
-                              multiplyPartMatrix + vectorOffset[currentThread],
-                              vectorCountLine[currentThread]);
+        do {
+            MultiplyMatrixByVector(A + vectorOffset[currentThread]*size,
+                                   x,
+                                   multiplyPartMatrix + vectorOffset[currentThread],
+                                   vectorCountLine[currentThread]);
 
-        MinusVectors(multiplyPartMatrix + vectorOffset[currentThread],
-                     b + vectorOffset[currentThread],
-                     compareVectors + vectorOffset[currentThread],
-                     vectorCountLine[currentThread]);
+            MinusVectors(multiplyPartMatrix + vectorOffset[currentThread],
+                         b + vectorOffset[currentThread],
+                         compareVectors + vectorOffset[currentThread],
+                         vectorCountLine[currentThread]);
 
-        MultiplyVectorByConstant(compareVectors + vectorOffset[currentThread], tau,
-                                 vectorResult + vectorOffset[currentThread],
-                                 vectorCountLine[currentThread]);
+            MultiplyVectorByConstant(compareVectors + vectorOffset[currentThread], tau,
+                                     vectorResult + vectorOffset[currentThread],
+                                     vectorCountLine[currentThread]);
 
 #pragma omp barrier
-        MinusVectors(x + vectorOffset[currentThread],
-                     vectorResult + vectorOffset[currentThread],
-                     vectorResult + vectorOffset[currentThread],
-                     vectorCountLine[currentThread]);
+            MinusVectors(x + vectorOffset[currentThread],
+                         vectorResult + vectorOffset[currentThread],
+                         vectorResult + vectorOffset[currentThread],
+                         vectorCountLine[currentThread]);
 
-        CopyVector(x + vectorOffset[currentThread],
-                   vectorResult + vectorOffset[currentThread],
-                   vectorCountLine[currentThread]);
+            CopyVector(x + vectorOffset[currentThread],
+                       vectorResult + vectorOffset[currentThread],
+                       vectorCountLine[currentThread]);
 #pragma omp barrier
-        partFirstNorm = FormingEuclideanNorm(compareVectors + vectorOffset[currentThread],
-                                             vectorCountLine[currentThread]);
+            partFirstNorm = FormingEuclideanNorm(compareVectors + vectorOffset[currentThread],
+                                                 vectorCountLine[currentThread]);
 #pragma omp single
-        firstNorm = 0.0f;
+            firstNorm = 0.0f;
 
 #pragma omp atomic
-        firstNorm += partFirstNorm;
+            firstNorm += partFirstNorm;
 
 #pragma omp single
-        run = IsFirstNormMoreEpsilon(sqrt(firstNorm), normB);
-    } while (run);
-}
+            run = IsFirstNormMoreEpsilon(sqrt(firstNorm), normB);
+        } while (run);
+    }
     DeleteVectors(A, b, x, multiplyPartMatrix, vectorUtility, compareVectors);
     return vectorResult;
 }
