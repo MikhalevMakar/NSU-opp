@@ -27,7 +27,7 @@
 
     dynamicVector GenerateDynamicArray(const int size) {
         dynamicMatrix vector = new double[size];
-        assert(vector != nullptr);
+        assert(vector != NULL);
         return vector;
     }
 
