@@ -131,9 +131,6 @@ dynamicVector IterativeMethod(const int size) {
 
 #pragma omp parallel
 {
-        int currentThread = omp_get_thread_num();
-        int numThread = omp_get_num_threads();
-
         do {
             MultiplyMatrixByVector(A,
                                    x,
@@ -186,5 +183,3 @@ int main(int argc, char *argv[]) {
     delete[] vector;
     return 0;
 }
-
-//schedule(static, OMP_NUM_THREADS)
