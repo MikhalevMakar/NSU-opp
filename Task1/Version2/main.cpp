@@ -105,38 +105,32 @@ dynamicMatrix GeneratePartMatrix(const int rank, const int cntProcess, const int
     return partMatrix;
 }
 
-dynamicVector MultiplyVectors(const dynamicVector vector1,
+void MultiplyVectors(const dynamicVector vector1,
                               const dynamicVector vector2,
                               dynamicVector result,
                               const int& size,
                               const int& rank,
                               const int& cntProcess) {
-
     GenerateVectorArbitraryValue(result, size, ZERO_VALUE);
-
     for(int i = 0; i < size/cntProcess; ++i) {
         for  (int j = 0; j < size; ++j) {
             result[j] += vector1[j+i*size] * vector2[i];
         }
     }
-
-    return result;
 }
 
-dynamicVector MinusVectors(const dynamicVector vector1, const dynamicVector vector2,
+void MinusVectors(const dynamicVector vector1, const dynamicVector vector2,
                            dynamicVector result, const int size) {
     for(int i = 0; i < size; ++i) {
         result[i] = vector1[i] - vector2[i];
     }
-    return result;
 }
 
-dynamicVector MultiplyVectorByConstant(const dynamicVector vector, dynamicVector result,
+void MultiplyVectorByConstant(const dynamicVector vector, dynamicVector result,
                                        const double constant, const int size) {
     for(int i = 0; i < size; ++i) {
         result[i] = vector[i] * constant;
     }
-    return result;
 }
 
 double FormingEuclideanNorm(const dynamicVector vector, const int& size) {
@@ -189,7 +183,7 @@ double* IterativeMethod(const int rank, const int cntProcess) {
 
     dynamicMatrix multiplyPartMatrixVector = GenerateDynamicArray(fictitiousSize);
     do {
-        multiplyPartMatrixVector = MultiplyVectors(A, x, multiplyPartMatrixVector, fictitiousSize, rank, cntProcess);
+        MultiplyVectors(A, x, multiplyPartMatrixVector, fictitiousSize, rank, cntProcess);
 
         MPI_Allreduce(multiplyPartMatrixVector, multiplyMatrixVector,
                       fictitiousSize, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -197,15 +191,15 @@ double* IterativeMethod(const int rank, const int cntProcess) {
         MPI_Scatter(multiplyMatrixVector, fixedSizePartVector, MPI_DOUBLE, vectorUtility,
                     fixedSizePartVector, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
 
-        vectorUtility = MinusVectors(vectorUtility, b, vectorUtility, fixedSizePartVector);
+        MinusVectors(vectorUtility, b, vectorUtility, fixedSizePartVector);
 
         findPartNorm = FormingEuclideanNorm(vectorUtility, fixedSizePartVector);
 
         MPI_Allreduce(&findPartNorm, &resultNorm, SIZE_ONE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-       vectorUtility = MinusVectors(x,
-                                    MultiplyVectorByConstant(vectorUtility, vectorUtility, tau, fixedSizePartVector),
-                                    vectorUtility, fixedSizePartVector);
+        MultiplyVectorByConstant(vectorUtility, vectorUtility, tau, fixedSizePartVector);
+
+        MinusVectors(x, vectorUtility, vectorUtility, fixedSizePartVector);
 
         CopyVector(x, vectorUtility, fixedSizePartVector);
 
