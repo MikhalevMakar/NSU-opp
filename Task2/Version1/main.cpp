@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
 
    double endTime = omp_get_wtime();
 
-    std::cout << "RESULT VECTOR\n";
+   std::cout << "RESULT VECTOR\n";
    PrintVector(vector, SIZE_VECTOR);
    std::cout << std::endl << "TIME: " << endTime - startTime << std::endl;
 
