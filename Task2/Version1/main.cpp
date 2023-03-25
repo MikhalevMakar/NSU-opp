@@ -4,13 +4,14 @@
 #include <assert.h>
 #include <omp.h>
 
-enum { SIZE_VECTOR = 1024,
+enum { SIZE_VECTOR = 4096,
       ARBITRARY_VALUE = 0,
       ZERO_VALUE = 0
 };
 
 const double tau =  1e-5;
 const double epsilon = 1e-5;
+const int chunckSize = 2;
 
 typedef double* dynamicVector;
 typedef double* dynamicMatrix;
@@ -19,7 +20,7 @@ void PrintVector(const dynamicVector vector, const int size) {
    for(int j = 0; j < size; ++j) {
        std::cout << (double)vector[j] << " ";
    }
-   printf("\n");
+    std::cout << std::endl;
 }
 
 dynamicVector GenerateDynamicVector(const int size) {
@@ -29,7 +30,7 @@ dynamicVector GenerateDynamicVector(const int size) {
 }
 
 void GenerateVectorArbitraryValue(dynamicVector vector, const int size, const double value) {
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic, chunckSize)   /////////
    for(int i = 0; i < size; ++i) {
        vector[i] = value;
    }
@@ -42,7 +43,7 @@ dynamicVector GenerateSolutionVector(const int size) {
 }
 
 dynamicVector GenerateVectorRightParts(const int size) {
-   dynamicVector vector =  GenerateDynamicVector(size);
+   dynamicVector vector = GenerateDynamicVector(size);
    GenerateVectorArbitraryValue(vector, size, size+1);
    return vector;
 }
@@ -50,7 +51,7 @@ dynamicVector GenerateVectorRightParts(const int size) {
 dynamicMatrix GenerateMatrix(const int size) {
    dynamicMatrix matrix = GenerateDynamicVector(size*size);
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic, chunckSize)  /////////
    for(int i = 0; i < size; ++i) {
        for(int j = 0; j < size; ++j) {
            matrix[size*i+j] = 1.0f;
@@ -63,7 +64,7 @@ dynamicMatrix GenerateMatrix(const int size) {
 dynamicVector MultiplyMatrixByVector(const dynamicMatrix matrix, const dynamicVector vector,
                                     dynamicVector result, const int size) {
    GenerateVectorArbitraryValue(result, size, ZERO_VALUE);
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic, chunckSize)  /////////
    for(int i = 0; i < size; ++i) {
        for  (int j = 0; j < size; ++j) {
            result[i] += matrix[i*size+j] * vector[j];
@@ -74,7 +75,7 @@ dynamicVector MultiplyMatrixByVector(const dynamicMatrix matrix, const dynamicVe
 
 dynamicVector MinusVectors(const dynamicVector vector1, const dynamicVector vector2,
                          dynamicVector result, const int size) {
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic, chunckSize)  /////////
    for(int i = 0; i < size; ++i) {
        result[i] = vector1[i] - vector2[i];
    }
@@ -83,7 +84,7 @@ dynamicVector MinusVectors(const dynamicVector vector1, const dynamicVector vect
 
 dynamicVector MultiplyVectorByConstant(const dynamicVector vector, const double constant,
                                       dynamicVector result, const int size) {
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic, chunckSize)  /////////
    for(int i = 0; i < size; ++i) {
        result[i] = vector[i] * constant;
    }
@@ -92,7 +93,7 @@ dynamicVector MultiplyVectorByConstant(const dynamicVector vector, const double 
 
 double FormingFirstNorm(const dynamicVector vector, const int size) {
    double sumVector = 0.0f;
-#pragma omp parallel for reduction(+ : sumVector)
+#pragma omp parallel for reduction(+ : sumVector) schedule(dynamic, chunckSize)  /////////
    for (int i = 0; i < size; ++i) {
        sumVector += vector[i] * vector[i];
    }
@@ -104,7 +105,7 @@ bool IsFirstNormMoreEpsilon(const double v1, const double v2) {
 }
 
 void CopyVector(dynamicVector copyVector, const dynamicVector sourceVector, const int size) {
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic, chunckSize)  /////////
    for(int i = 0; i < size; ++i) {
        copyVector [i] = sourceVector[i];
    }
@@ -158,7 +159,7 @@ int main(int argc, char* argv[]) {
 
    double endTime = omp_get_wtime();
 
-   printf("RESULT VECTOR\n");
+    std::cout << "RESULT VECTOR\n";
    PrintVector(vector, SIZE_VECTOR);
    std::cout << std::endl << "TIME: " << endTime - startTime << std::endl;
 
