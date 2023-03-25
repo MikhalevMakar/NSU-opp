@@ -5,7 +5,7 @@
 #include <omp.h>
 
 enum {
-    SIZE_VECTOR = 35,
+    SIZE_VECTOR = 4096,
     ARBITRARY_VALUE = 0
 };
 
