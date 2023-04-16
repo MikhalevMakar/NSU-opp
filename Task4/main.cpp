@@ -3,11 +3,10 @@
 #include <mpi.h>
 #include <cfloat>
 #include <cmath>
+#include <vector>
 
 #define Grid double*
-#define Vector double*
-
-enum AREA_Ω{
+enum AREA_Ω {
     Dx = 2,
     Dy = 2,
     Dz = 2,
@@ -17,13 +16,13 @@ enum AREA_Ω{
 };
 
 enum SIZE_GRID {
-    Nx = 3,
-    Ny = 4,
-    Nz = 7
+    Nx = 4,
+    Ny = 5,
+    Nz = 5
 };
 
-constexpr double ValueStep(int D, int N) {
-    return D / (double)(N - 1);
+constexpr double ValueStep(const int D, const int N) {
+    return static_cast<double>(D / static_cast<double>(N - 1));
 }
 
 namespace GRID_STEPS {
@@ -41,14 +40,18 @@ namespace CONST {
     constexpr double ε = 1e-8;
     constexpr int INITIAL_APPROXIMATION = 0;
     constexpr int ROOT = 0;
+    constexpr int MPI_TAG = 1234;
 
     constexpr double COEFFICIENT_Hx = CalcCoefficientH(GRID_STEPS::Hx);
     constexpr double COEFFICIENT_Hy = CalcCoefficientH(GRID_STEPS::Hy);
     constexpr double COEFFICIENT_Hz = CalcCoefficientH(GRID_STEPS::Hz);
+
+    constexpr double COEFFICIENT =
+            1 / (CONST::COEFFICIENT_Hx + CONST::COEFFICIENT_Hy + CONST::COEFFICIENT_Hz + CONST::a);
 }
 
-void PrintGrid(Grid grid) {
-    for(int x = 0; x < Nx; ++x) {
+void PrintGrid(Grid grid, const std::vector<int>& vectorCountLine, const int rank) {
+    for(int x = 0; x < vectorCountLine[rank]; ++x) {
         for(int y = 0; y < Ny; ++y) {
             for(int z = 0; z < Nz; ++z) {
                 std::cout << grid[x * Ny * Nz + y * Nz + z] << " ";
@@ -59,14 +62,11 @@ void PrintGrid(Grid grid) {
     }
 }
 
-Grid MemoryAllocatedGrid() {
-    Grid grid = new double[SIZE_GRID::Nx *
-                           SIZE_GRID::Ny *
-                           SIZE_GRID::Nz];
+Grid MemoryAllocatedGrid(int size) {
+    Grid grid = new double[size];
     assert(grid);
     return grid;
 }
-
 
 template <typename T, typename... Args>
 bool IsZero(const T value, const Args... digits) {
@@ -92,26 +92,27 @@ double RightHandSideEquation(const int i, const int j, const int k) {
     return 6 - CONST::a * CalculateFunctionValue(i, j, k);
 }
 
-Grid GenerateGrid() {
-    Grid grid = MemoryAllocatedGrid();
+Grid GenerateGrid(const std::vector<int> vectorOffset, const std::vector<int> vectorCountLine,
+                  const int rank, const int countThread) {
+    Grid grid = MemoryAllocatedGrid(SIZE_GRID::Nx * SIZE_GRID::Ny * SIZE_GRID::Nz / countThread);
 
-    for(int i = 0; i < Nx; ++i) {
-        for(int j = 0; j < Ny; ++j) {
+    for(int i = 0, beginPosI = vectorOffset[rank]; i < vectorCountLine[rank]; ++i, ++beginPosI)
+        for(int j = 0; j < Ny; ++j)
             for(int k = 0; k < Nz; ++k) {
                 grid[i * Ny * Nz + j * Nz + k] =
-                        (IsZero(i, j, k) || i == Nx-1 || j == Ny-1 || k == Nz-1)
+                        (IsZero(beginPosI, j, k) || beginPosI == Nx-1 || j == Ny-1 || k == Nz-1)
                         ?
-                        CalculateFunctionValue(i, j, k) : CONST::INITIAL_APPROXIMATION;
+                        CalculateFunctionValue(beginPosI, j, k) : CONST::INITIAL_APPROXIMATION;
             }
-        }
-    }
     return grid;
 }
 
-void CalculationRequiredFunction(Grid grid, double& maximumChange) {
+void CalculationInnerPartGrid(Grid grid, double& maximumChange,
+                                 const std::vector<int> vectorCountLine, const std::vector<int> vectorOffset,
+                                 const int rank) {
     double currValue, Fx, Fy, Fz;
 
-    for(int i = 1; i < Nx-1; ++i) {
+    for(int i = 1; i < vectorCountLine[rank]-1; ++i) {
         for(int j = 1; j < Ny-1; ++j) {
             for(int k = 1; k < Nz-1; ++k) {
 
@@ -121,66 +122,160 @@ void CalculationRequiredFunction(Grid grid, double& maximumChange) {
 
                 currValue = grid[i * Ny * Nz + j * Nz + k];
 
-                double coefficient = (1 / (CONST::COEFFICIENT_Hx + CONST::COEFFICIENT_Hy + CONST::COEFFICIENT_Hz + CONST::a));
-
-                grid[i * Ny * Nz + j * Nz + k] = (Fx + Fy + Fz - RightHandSideEquation(i, j, k)) * coefficient;
+                grid[i * Ny * Nz + j * Nz + k] = (Fx + Fy + Fz - RightHandSideEquation(i+vectorOffset[rank], j, k)) * CONST::COEFFICIENT;
                 if(maximumChange > fabs(grid[i * Ny * Nz + j * Nz + k] - currValue))
-
                     maximumChange = fabs(grid[i * Ny * Nz + j * Nz + k] - currValue);
             }
         }
     }
-
-};
-
-void LaunchFindGridDecisions(Grid grid) {
-    double maximumChange = DBL_MAX;
-   do {
-       CalculationRequiredFunction(grid, maximumChange);
-   } while(maximumChange > CONST::ε);
 }
 
-double FindMaxChange(Grid grid) {
+void GenerateVectorOffset(std::vector<int>& vectorCountLine, std::vector<int>& vectorOffset, const int size) {
+    vectorCountLine.resize(size, SIZE_GRID::Nx / size);
+    vectorOffset.resize(size);
+
+    int remainder = SIZE_GRID::Nx % size;
+    for(int i = 0; i < remainder; ++i) {
+        ++vectorCountLine[i];
+    }
+    for (int i = 0, offset = 0; i < size; offset += vectorCountLine[i++]) {
+        vectorOffset[i] = offset;
+    }
+}
+
+double FindMaxDelta(Grid grid) {
     double maxChange = DBL_MIN;
-    for (int i = 0; i < Nx; ++i) {
-       for (int j = 0; j < Ny; ++j) {
+    for (int i = 0; i < Nx; ++i)
+       for (int j = 0; j < Ny; ++j)
            for (int k = 0; k < Nz; ++k) {
                 if(maxChange < fabs(grid[i * Ny * Nz + j * Nz + k]-CalculateFunctionValue(i, j, k)))
                     maxChange = fabs(grid[i * Ny * Nz + j * Nz + k]-CalculateFunctionValue(i, j, k));
-            }
+           }
+}
+
+void print(Grid arr) {
+    for (int i = 0; i < SIZE_GRID::Ny; ++i) {
+        for (int j = 0; j < SIZE_GRID::Nz; ++j) {
+            std::cout << arr[i*SIZE_GRID::Ny + j] << " ";
         }
+        std::cout << std::endl;
+    }
+
+    std::cout << std::endl;
+}
+
+void ICommutation(const int rank, const int countThread, const int offsetX, Grid bufferReceivedLow, Grid bufferReceivedUpper, Grid grid)  {
+    MPI_Request request[4];
+
+    if(rank != CONST::ROOT) {
+
+        MPI_Isend(grid, SIZE_GRID::Ny*SIZE_GRID::Nz, MPI_DOUBLE,
+                  rank-1, 0, MPI_COMM_WORLD, &request[0]);
+
+        MPI_Isend(bufferReceivedLow, SIZE_GRID::Ny*SIZE_GRID::Nz, MPI_DOUBLE,
+                  rank-1, 1, MPI_COMM_WORLD, &request[1]);
+
+    } else if( rank != countThread-1) {
+
+        MPI_Isend(grid+offsetX*SIZE_GRID::Ny*SIZE_GRID::Nz, SIZE_GRID::Ny*SIZE_GRID::Nz, MPI_DOUBLE,
+                  rank+1, 1, MPI_COMM_WORLD, &request[2]);
+
+        MPI_Isend(bufferReceivedUpper, SIZE_GRID::Ny*SIZE_GRID::Nz, MPI_DOUBLE,
+                  rank+1, 0, MPI_COMM_WORLD, &request[3]);
     }
 }
 
+void RunMethodJacobi(const int rank) {
+    int countThread;
+    MPI_Comm_size(MPI_COMM_WORLD, &countThread);
 
+    double maximumChange = DBL_MAX;
+    std::vector<int> vectorCountLine, vectorOffset;
 
-void RunMethodJacobi() {
-    int cntProcess, rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &cntProcess);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    Grid grid = NULL;
+    Grid bufferReceivedLow = MemoryAllocatedGrid(SIZE_GRID::Ny * SIZE_GRID::Nz);
+    Grid bufferReceivedUpper = MemoryAllocatedGrid(SIZE_GRID::Ny * SIZE_GRID::Nz);
 
-    if(rank == CONST::ROOT)  grid = GenerateGrid();
+    GenerateVectorOffset(vectorCountLine, vectorOffset, countThread);
+    Grid grid = GenerateGrid(vectorOffset, vectorCountLine, rank, countThread);
 
-    double startTime = MPI_Wtime();
+    ICommutation(rank, countThread, vectorOffset[countThread-1], bufferReceivedLow, bufferReceivedUpper, grid);
 
-    LaunchFindGridDecisions(grid);
+    printf("\nLOWER\n");
+    print(bufferReceivedLow);
 
-    double endTime = MPI_Wtime();
+    printf("\nUPPER\n");
+    print(bufferReceivedUpper);
 
-    if(rank == CONST::ROOT) {
-        PrintGrid(grid);
-        std::cout << "CHANGE_VALUE: " << FindMaxChange(grid) << std::endl;
-        std::cout << std::endl << "TIME: " << endTime - startTime << " seconds"<< std::endl;
-        free(grid);
-    }
+//    do {
+//        CalculationInnerPartGrid(grid, maximumChange, vectorCountLine, vectorOffset, rank);
+//    } while(maximumChange > CONST::ε);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    PrintGrid(grid, vectorCountLine, rank);
+
+    if(rank == CONST::ROOT)
+        std::cout << "CHANGE_VALUE: " << FindMaxDelta(grid) << std::endl;
+
+     free(grid);
 }
 
 int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    RunMethodJacobi();
+    double startTime = MPI_Wtime();
+
+    RunMethodJacobi(rank);
+
+    double endTime = MPI_Wtime();
+
+    if(rank == CONST::ROOT)
+        std::cout << std::endl << "TIME: " << endTime - startTime << " seconds"<< std::endl;
 
     MPI_Finalize();
     return 0;
 }
+
+//#include <mpi.h>
+//#include <iostream>
+//
+//int main(int argc, char** argv) {
+//    MPI_Init(&argc, &argv);
+//
+//    int rank, size;
+//    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+//    MPI_Comm_size(MPI_COMM_WORLD, &size);
+//
+//    int buffer[10];
+//
+//    if (rank == 0) {
+//        // Заполняем буфер данными
+//        for (int i = 0; i < 10; i++) {
+//            buffer[i] = i;
+//        }
+//
+//        // Отправляем данные процессу с рангом 1
+//        MPI_Request request;
+//        MPI_Isend(buffer, 10, MPI_INT, 1, 0, MPI_COMM_WORLD, &request);
+//
+//        // Ждем завершения передачи данных
+//        MPI_Wait(&request, MPI_STATUS_IGNORE);
+//    } else if (rank == 1) {
+//        // Получаем данные от процесса с рангом 0
+//        MPI_Request request;
+//        MPI_Irecv(buffer, 10, MPI_INT, 0, 0, MPI_COMM_WORLD, &request);
+//
+//        // Ждем завершения приема данных
+//        MPI_Wait(&request, MPI_STATUS_IGNORE);
+//
+//        // Выводим полученные данные
+//        for (int i = 0; i < 10; i++) {
+//            std::cout << buffer[i] << " ";
+//        }
+//        std::cout << std::endl;
+//    }
+//
+//    MPI_Finalize();
+//    return 0;
+//}
