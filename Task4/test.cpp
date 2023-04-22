@@ -125,6 +125,7 @@ void CalculationRequiredFunction(Grid grid, double& maximumChange) {
                 double coefficient = (1 / (CONST::COEFFICIENT_Hx + CONST::COEFFICIENT_Hy + CONST::COEFFICIENT_Hz + CONST::a));
 
                 grid[i * Ny * Nz + j * Nz + k] = (Fx + Fy + Fz - RightHandSideEquation(i, j, k)) * coefficient;
+                maximumChange = std::max(maximumChange, fabs(grid[i * Ny * Nz + j * Nz + k] - currValue));
                 if(maximumChange > fabs(grid[i * Ny * Nz + j * Nz + k] - currValue))
 
                     maximumChange = fabs(grid[i * Ny * Nz + j * Nz + k] - currValue);
@@ -134,11 +135,13 @@ void CalculationRequiredFunction(Grid grid, double& maximumChange) {
 };
 
 void LaunchFindGridDecisions(Grid grid) {
-   // PrintGrid(grid);
+    // PrintGrid(grid);
     double maximumChange = DBL_MAX;
-   do {
-       CalculationRequiredFunction(grid, maximumChange);
-   } while(maximumChange > CONST::ε);
+    int cnt = 0;
+    do {
+    CalculationRequiredFunction(grid, maximumChange);
+    //} while(maximumChange > CONST::ε);
+    } while(++cnt < 1);
 }
 
 double FindMaxChange(Grid grid) {
@@ -172,12 +175,11 @@ void RunMethodJacobi() {
 
     double endTime = MPI_Wtime();
 
-    if(rank == CONST::ROOT) {
-        PrintGrid(grid);
-        std::cout << "CHANGE_VALUE: " << FindMaxChange(grid) << std::endl;
-        std::cout << std::endl << "TIME: " << endTime - startTime << " seconds"<< std::endl;
-        free(grid);
-    }
+
+    PrintGrid(grid);
+    std::cout << "CHANGE_VALUE: " << FindMaxChange(grid) << std::endl;
+    std::cout << std::endl << "TIME: " << endTime - startTime << " seconds"<< std::endl;
+    free(grid);
 }
 
 int main(int argc, char** argv) {
