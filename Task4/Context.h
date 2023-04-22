@@ -10,9 +10,9 @@ enum AREA_CHANGE_SYMBOL {
 };
 
 enum SIZE_GRID {
-    Nx = 30,
-    Ny = 20,
-    Nz = 20
+    Nx = 532,
+    Ny = 230,
+    Nz = 204
 };
 
 struct Index {
@@ -53,4 +53,5 @@ struct Const {
 
     static constexpr double COEFFICIENT =
             1 / ( STEP_Hx + STEP_Hy + STEP_Hz + Const::a);
+    static constexpr int INCREASE_RANK = 1;
 };
