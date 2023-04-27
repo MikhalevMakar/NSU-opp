@@ -10,9 +10,9 @@ enum AREA_CHANGE_SYMBOL {
 };
 
 enum SIZE_GRID {
-    Nx = 532,
-    Ny = 230,
-    Nz = 204
+    Nx = 200,
+    Ny = 132,
+    Nz = 43
 };
 
 struct Index {

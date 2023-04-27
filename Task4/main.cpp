@@ -12,28 +12,8 @@ Grid MemoryAllocatedGrid(int size) {
     return grid;
 }
 
-template <typename T, typename... Args>
-bool IsZero(const T value, const Args... digits) {
-
-    if(value == 0) return true;
-
-    if constexpr(sizeof...(digits) > 0) {
-        return IsZero(digits...);
-    }
-
-    return false;
-}
-
 double GetCoordinate(const double startCoord, const double step, const int index) {
     return startCoord + index*step;
-}
-
-template <typename T, typename... Args>
-void OverrideFree(T matrix, Args... matrices) {
-    free(matrix);
-    if constexpr(sizeof...(matrices) > 0) {
-        OverrideFree(matrices...);
-    }
 }
 
 double CalculateFunctionValue(const int i, const int j, const int k) {
@@ -55,7 +35,7 @@ Grid GenerateGrid(const std::vector<int> vectorOffset, const std::vector<int> ve
         for(int j = 0; j < Ny; ++j)
             for(int k = 0; k < Nz; ++k) {
                 grid[i * Ny * Nz + j * Nz + k] =
-                        (IsZero(beginPosI, j, k) || beginPosI == Nx-1 || j == Ny-1 || k == Nz-1)
+                        (beginPosI == 0||  j == 0 || k == 0 || beginPosI == Nx-1 || j == Ny-1 || k == Nz-1)
                         ?
                         CalculateFunctionValue(beginPosI, j, k) : Const::INITIAL_APPROXIMATION;
             }
@@ -97,7 +77,7 @@ void CalculationInnerPartGrid(Grid grid, double& maximumChange,
             }
         }
     }
-    OverrideFree(index);
+    free(index);
 }
 
 void CalculationEdgesPartGrid(Grid grid, const Grid bufferLow, const Grid bufferUpper,
@@ -133,7 +113,7 @@ void CalculationEdgesPartGrid(Grid grid, const Grid bufferLow, const Grid buffer
             }
         }
     }
-    OverrideFree(index);
+    free(index);
 }
 
 void GenerateVectorOffset(std::vector<int>& vectorCountLine, std::vector<int>& vectorOffset, const int size) {
@@ -250,7 +230,10 @@ void RunMethodJacobi(const int rank) {
         std::cout << "CHANGE_VALUE: " << maximumChange << std::endl;
     }
 
-    OverrideFree(grid, bufferReceivedUpper, bufferReceivedLow, vectorMaxChange);
+    delete []grid;
+    delete []bufferReceivedUpper;
+    delete []bufferReceivedLow;
+    delete []vectorMaxChange;
 }
 
 int main(int argc, char** argv) {
