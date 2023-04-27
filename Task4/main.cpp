@@ -17,9 +17,9 @@ enum AREA_CHANGE_SYMBOL {
 };
 
 enum SIZE_GRID {
-    Nx = 200,
-    Ny = 132,
-    Nz = 43
+    Nx = 100,
+    Ny = 400,
+    Nz = 300
 };
 
 struct Index {
@@ -245,25 +245,18 @@ void FindMaxChange(double* vectorMaxChange, double& maxChange, const int countTh
     }
 }
 
-void RunMethodJacobi(const int rank) {
-    int countThread;
-    MPI_Comm_size(MPI_COMM_WORLD, &countThread);
+void CalculateMethodJacobi(Grid grid, const int rank, const int countThread,
+                           const std::vector<int> vectorCountLine, const std::vector<int> vectorOffset) {
 
+    MPI_Request request[4];
     double maximumChange = DBL_MIN;
-    std::vector<int> vectorCountLine, vectorOffset;
+
+    double* vectorMaxChange = MemoryAllocatedGrid(countThread);
 
     Grid bufferReceivedLow = MemoryAllocatedGrid(SIZE_GRID::Ny * SIZE_GRID::Nz);
     Grid bufferReceivedUpper = MemoryAllocatedGrid(SIZE_GRID::Ny * SIZE_GRID::Nz);
 
-    GenerateVectorOffset(vectorCountLine, vectorOffset, countThread);
-    Grid grid = GenerateGrid(vectorOffset, vectorCountLine, rank);
-
-    MPI_Request request[4];
-
-    double* vectorMaxChange = MemoryAllocatedGrid(countThread);
-
     do {
-
         maximumChange = DBL_MIN;
         ICommutation(rank, countThread, vectorCountLine[countThread-1]-1,
                      bufferReceivedLow, bufferReceivedUpper, grid, request);
@@ -279,8 +272,6 @@ void RunMethodJacobi(const int rank) {
        FindMaxChange(vectorMaxChange, maximumChange, countThread);
     } while(maximumChange >= Const::EPLSILOND);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-
     maximumChange = FindMaxDelta(grid, rank, vectorCountLine, vectorOffset);
 
     FindMaxChange(vectorMaxChange, maximumChange, countThread);
@@ -289,26 +280,37 @@ void RunMethodJacobi(const int rank) {
         std::cout << "CHANGE_VALUE: " << maximumChange << std::endl;
     }
 
-    delete []grid;
     delete []bufferReceivedUpper;
     delete []bufferReceivedLow;
     delete []vectorMaxChange;
 }
 
-int main(int argc, char** argv) {
-    MPI_Init(&argc, &argv);
-    int rank;
+void RunMethodJacobi() {
+    int rank, countThread;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &countThread);
+
+    std::vector<int> vectorCountLine, vectorOffset;
+
+    GenerateVectorOffset(vectorCountLine, vectorOffset, countThread);
+    Grid grid = GenerateGrid(vectorOffset, vectorCountLine, rank);
 
     double startTime = MPI_Wtime();
-
-    RunMethodJacobi(rank);
-
+    CalculateMethodJacobi(grid, rank, countThread, vectorCountLine, vectorOffset);
     double endTime = MPI_Wtime();
 
     if(rank == Const::ROOT)
-        std::cout << std::endl << "TIME: " << endTime - startTime << " seconds"<< std::endl;
+        std::cout << std::endl << "TIME: " << endTime - startTime << " seconds" << std::endl;
+
+    delete []grid;
+}
+
+
+int main(int argc, char** argv) {
+    MPI_Init(&argc, &argv);
+
+    RunMethodJacobi();
 
     MPI_Finalize();
     return 0;
