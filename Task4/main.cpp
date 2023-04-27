@@ -97,7 +97,6 @@ void CalculationInnerPartGrid(Grid grid, double& maximumChange,
             }
         }
     }
-
     OverrideFree(index);
 }
 
@@ -211,7 +210,7 @@ void RunMethodJacobi(const int rank) {
     int countThread;
     MPI_Comm_size(MPI_COMM_WORLD, &countThread);
 
-    double maximumChange;
+    double maximumChange = DBL_MIN;
     std::vector<int> vectorCountLine, vectorOffset;
 
     Grid bufferReceivedLow = MemoryAllocatedGrid(SIZE_GRID::Ny * SIZE_GRID::Nz);
@@ -225,6 +224,7 @@ void RunMethodJacobi(const int rank) {
     double* vectorMaxChange = MemoryAllocatedGrid(countThread);
 
     do {
+
         maximumChange = DBL_MIN;
         ICommutation(rank, countThread, vectorCountLine[countThread-1]-1,
                      bufferReceivedLow, bufferReceivedUpper, grid, request);

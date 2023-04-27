@@ -53,5 +53,6 @@ struct Const {
 
     static constexpr double COEFFICIENT =
             1 / ( STEP_Hx + STEP_Hy + STEP_Hz + Const::a);
+
     static constexpr int INCREASE_RANK = 1;
 };
