@@ -1,0 +1,3 @@
+/Users/natasamihaleva/NSU_OPP/Task5/cmake-build-debug/CMakeFiles/Task5.dir
+/Users/natasamihaleva/NSU_OPP/Task5/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/natasamihaleva/NSU_OPP/Task5/cmake-build-debug/CMakeFiles/rebuild_cache.dir
