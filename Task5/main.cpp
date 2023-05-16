@@ -8,14 +8,17 @@
 enum constants {
     BOUNDS_QUEUE = 10,
     BOUNDS_SIZE_TASK = 10000,
-    ROOT = 0
+    ROOT = 0,
+    PROCESS_FULFILLED_TASK = -1
 };
 
 typedef struct {
     const int CountThread;
     pthread_mutex_t *Lock;
-    std::queue<int> Queue;
+    std::queue<ssize_t> Queue;
     const int Rank;
+    pthread_cond_t Cond;
+    bool StatusRun;
 } Context;
 
 int iterationCounter = 0;
@@ -25,16 +28,16 @@ int get_repeat_number(const int random_value, const int rank, const int countPro
     return abs(rank - (random_value % countProcess));
 }
 
-int get_random_value(const int bounds, const int rank, const int count_process) {
+ssize_t get_random_value(const int bounds, const int rank, const int count_process) {
     std::random_device rd;
     std::mt19937 gen(rd());
 
-    std::uniform_int_distribution<int> dist(count_process, (rank + 1) * bounds + count_process);
+    std::uniform_int_distribution<ssize_t> dist(count_process, (rank + 1) * bounds + count_process);
     return dist(gen);
 }
 
-std::queue<int> initialize_queue_task(const int size_queue, const int rank, const int count_process) {
-    std::queue<int> queue;
+std::queue<ssize_t> initialize_queue_task(const ssize_t size_queue, const int rank, const int count_process) {
+    std::queue<ssize_t> queue;
 
     for (int i = 0; i < size_queue; ++i) {
 
@@ -44,9 +47,14 @@ std::queue<int> initialize_queue_task(const int size_queue, const int rank, cons
                                      count_process)
                    );
     }
+    return queue;
 }
 
-void* task_execute(void* _context) {
+void task_execute(Context* context) {
+
+}
+
+void* worker(void* _context) {
     auto context = (Context *) _context;
 
     int task_extent;
@@ -72,24 +80,31 @@ void* task_wait(void* _context) { // если очередь пуста, то и
     auto context = (Context *) _context;
 
     MPI_Status status;
-    int recvTask;
+    ssize_t recvTask;
 
     pthread_mutex_lock(context->Lock);
 
-    while(true) {
-        //pthread_cond_wait(&finishTasks, &sendThreadMutex);
+    printf("Run");
+    while(context->StatusRun) {
+        pthread_cond_wait(&context->Cond, context->Lock);
+        int number_proc_completed = 0;
 
         for (int i = 0; context->CountThread; ++i) {
             if (i == context->Rank) continue;
 
-            MPI_Send(&context->Rank, 1, MPI_INT, context->Rank, i, MPI_COMM_WORLD);
-            MPI_Recv(&recvTask, 1, MPI_INT, i, context->Rank, MPI_COMM_WORLD, &status);
+            MPI_Send(&context->Rank, 1, MPI_INT, i, MPI_ANY_SOURCE, MPI_COMM_WORLD);
+            MPI_Recv(&recvTask, 1, MPI_INT, i, MPI_ANY_SOURCE, MPI_COMM_WORLD, &status);
+
+            if(recvTask != PROCESS_FULFILLED_TASK) {
+                context->Queue.push(recvTask);
+            } else { ++number_proc_completed; }
         }
 
+        if(number_proc_completed == context->CountThread)
+            context->StatusRun = false;
     }
 
     pthread_mutex_unlock(context->Lock);
-
 
     return NULL;
 }
@@ -108,44 +123,44 @@ void* task_send(void* _context) {
 }
 
 Context fill_context(const int count_process, const int rank,
-                     pthread_mutex_t* mutex, std::queue<int> queue) {
+                     pthread_mutex_t* mutex, std::queue<ssize_t> queue) {
     Context context = {
             .CountThread = count_process,
             .Lock = mutex,
             .Queue = std::move(queue),
-            .Rank = rank
-
+            .Rank = rank,
+            .Cond = PTHREAD_COND_INITIALIZER,
+            .StatusRun = true
     };
     return context;
-}
+    }
 
 void run_pthread(const int rank, const int count_process) {
-    int size_queue = get_random_value(BOUNDS_QUEUE, rank, count_process);
-    std::queue<int> queue_tasks = initialize_queue_task(size_queue, rank, count_process);
+    ssize_t size_queue = get_random_value(BOUNDS_QUEUE, rank, count_process);
+    std::queue<ssize_t> queue_tasks = initialize_queue_task(size_queue, rank, count_process);
 
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
     pthread_attr_t attrs;
 
     pthread_attr_init(&attrs);
     pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_JOINABLE);
 
-    pthread_t thread_execute;
-    pthread_t thread_request_send;
-    pthread_t thread_request_recv;
+    pthread_t thread_worker;
+    pthread_t thread_task_wait;
+    pthread_t thread_task_send;
 
     Context context = fill_context(count_process, rank,
                                    &mutex, queue_tasks);
 
-    pthread_create(&thread_execute, &attrs, task_execute, &context);
-    pthread_create(&thread_request_send, &attrs, task_wait, &context);
-    pthread_create(&thread_request_recv, &attrs, task_send, &context);
+    //pthread_create(&thread_worker, &attrs, worker, &context);
+    pthread_create(&thread_task_wait, &attrs, task_wait, &context);
+    //pthread_create(&thread_task_send, &attrs, task_send, &context);
 
     pthread_attr_destroy(&attrs);
 
-    pthread_join(thread_execute, nullptr);
-    pthread_join(thread_request_send, nullptr);
-    pthread_join(thread_request_recv, nullptr);
+    //pthread_join(thread_worker, nullptr);
+    pthread_join(thread_task_wait, nullptr);
+    //pthread_join(thread_task_send, nullptr);
 
     pthread_mutex_destroy(&mutex);
 }
@@ -153,7 +168,6 @@ void run_pthread(const int rank, const int count_process) {
 int main(int argc, char **argv) {
     int provider = MPI_THREAD_MULTIPLE;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provider);
-
 
     int rank, countThread;
 
