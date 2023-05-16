@@ -53,20 +53,6 @@ build CMakeFiles/Task5.dir/main.cpp.o: CXX_COMPILER__Task5_Debug /Users/natasami
   OBJECT_DIR = CMakeFiles/Task5.dir
   OBJECT_FILE_DIR = CMakeFiles/Task5.dir
 
-build CMakeFiles/Task5.dir/ListTasks.cpp.o: CXX_COMPILER__Task5_Debug /Users/natasamihaleva/NSU_OPP/Task5/ListTasks.cpp || cmake_object_order_depends_target_Task5
-  DEP_FILE = CMakeFiles/Task5.dir/ListTasks.cpp.o.d
-  FLAGS = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk -std=gnu++14
-  INCLUDES = -I/opt/homebrew/Cellar/open-mpi/4.1.5/include
-  OBJECT_DIR = CMakeFiles/Task5.dir
-  OBJECT_FILE_DIR = CMakeFiles/Task5.dir
-
-build CMakeFiles/Task5.dir/Task.cpp.o: CXX_COMPILER__Task5_Debug /Users/natasamihaleva/NSU_OPP/Task5/Task.cpp || cmake_object_order_depends_target_Task5
-  DEP_FILE = CMakeFiles/Task5.dir/Task.cpp.o.d
-  FLAGS = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk -std=gnu++14
-  INCLUDES = -I/opt/homebrew/Cellar/open-mpi/4.1.5/include
-  OBJECT_DIR = CMakeFiles/Task5.dir
-  OBJECT_FILE_DIR = CMakeFiles/Task5.dir
-
 
 # =============================================================================
 # Link build statements for EXECUTABLE target Task5
@@ -75,7 +61,7 @@ build CMakeFiles/Task5.dir/Task.cpp.o: CXX_COMPILER__Task5_Debug /Users/natasami
 #############################################
 # Link the executable Task5
 
-build Task5: CXX_EXECUTABLE_LINKER__Task5_Debug CMakeFiles/Task5.dir/main.cpp.o CMakeFiles/Task5.dir/ListTasks.cpp.o CMakeFiles/Task5.dir/Task.cpp.o | /opt/homebrew/Cellar/open-mpi/4.1.5/lib/libmpi.dylib
+build Task5: CXX_EXECUTABLE_LINKER__Task5_Debug CMakeFiles/Task5.dir/main.cpp.o | /opt/homebrew/Cellar/open-mpi/4.1.5/lib/libmpi.dylib
   FLAGS = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk
   LINK_LIBRARIES = /opt/homebrew/Cellar/open-mpi/4.1.5/lib/libmpi.dylib
   OBJECT_DIR = CMakeFiles/Task5.dir
