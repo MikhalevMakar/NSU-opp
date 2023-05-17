@@ -4,79 +4,54 @@
 #include <random>
 #include <utility>
 #include <pthread.h>
+#include "ConcurrentQueue.h"
 
 enum constants {
     BOUNDS_QUEUE = 10,
     BOUNDS_SIZE_TASK = 10000,
     ROOT = 0,
-    PROCESS_FULFILLED_TASK = -1
+    PROCESS_FULFILLED_TASK = -1,
+    TAG_REQUEST_TASK = 123,
+    TAG_SEND_TASK = 321
 };
 
 typedef struct {
     const int CountThread;
-    pthread_mutex_t *Lock;
-    std::queue<ssize_t> Queue;
+    pthread_mutex_t* Lock;
+    ConcurrentQueue<ssize_t>* Queue;
     const int Rank;
     pthread_cond_t Cond;
     bool StatusRun;
+    int Count_task_execute;
 } Context;
 
-int iterationCounter = 0;
 double globalRes = 0;
 
-int get_repeat_number(const int random_value, const int rank, const int countProcess) {
-    return abs(rank - (random_value % countProcess));
-}
+void* task_send(void* _context) {
+    auto context = (Context*) _context;
+    MPI_Status status;
+    int rankSender;
+    ssize_t task;
 
-ssize_t get_random_value(const int bounds, const int rank, const int count_process) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
+    while(context->StatusRun) {
+        MPI_Recv(&rankSender, 1, MPI_INT, MPI_ANY_SOURCE, TAG_REQUEST_TASK, MPI_COMM_WORLD, &status);
 
-    std::uniform_int_distribution<ssize_t> dist(count_process, (rank + 1) * bounds + count_process);
-    return dist(gen);
-}
+        pthread_mutex_lock(context->Lock);
 
-std::queue<ssize_t> initialize_queue_task(const ssize_t size_queue, const int rank, const int count_process) {
-    std::queue<ssize_t> queue;
-
-    for (int i = 0; i < size_queue; ++i) {
-
-        queue.push(
-                   get_repeat_number(get_random_value(BOUNDS_SIZE_TASK, rank, count_process),
-                                     rank,
-                                     count_process)
-                   );
-    }
-    return queue;
-}
-
-void task_execute(Context* context) {
-
-}
-
-void* worker(void* _context) {
-    auto context = (Context *) _context;
-
-    int task_extent;
-    for(int i = 0; i < context->Queue.size(); ++i) {
-        while (true) {
-            pthread_mutex_lock(context->Lock);
-
-            task_extent = context->Queue.front();
-            context->Queue.pop();
-
-            for (int j = 0; j < task_extent; ++j) {
-                globalRes += sqrt(j);
-            }
-
-            pthread_mutex_unlock(context->Lock);
-
+        if (!context->Queue->empty()) {
+            task = context->Queue->pop();
+        } else {
+            task = PROCESS_FULFILLED_TASK;
         }
-        ++iterationCounter;
+
+        pthread_mutex_unlock(context->Lock);
+
+        MPI_Send(&task, 1, MPI_INT, TAG_SEND_TASK, MPI_ANY_TAG, MPI_COMM_WORLD);
     }
+    return nullptr;
 }
 
-void* task_wait(void* _context) { // если очередь пуста, то ищем задачки
+void* task_wait(void* _context) {
     auto context = (Context *) _context;
 
     MPI_Status status;
@@ -84,19 +59,22 @@ void* task_wait(void* _context) { // если очередь пуста, то и
 
     pthread_mutex_lock(context->Lock);
 
-    printf("Run");
     while(context->StatusRun) {
+
         pthread_cond_wait(&context->Cond, context->Lock);
+
         int number_proc_completed = 0;
+
+        std::cout << "Get up thread task wait\n";
 
         for (int i = 0; context->CountThread; ++i) {
             if (i == context->Rank) continue;
 
-            MPI_Send(&context->Rank, 1, MPI_INT, i, MPI_ANY_SOURCE, MPI_COMM_WORLD);
-            MPI_Recv(&recvTask, 1, MPI_INT, i, MPI_ANY_SOURCE, MPI_COMM_WORLD, &status);
+            MPI_Send(&context->Rank, 1, MPI_INT, i, TAG_REQUEST_TASK, MPI_COMM_WORLD);
+            MPI_Recv(&recvTask, 1, MPI_INT, i, TAG_SEND_TASK, MPI_COMM_WORLD, &status);
 
             if(recvTask != PROCESS_FULFILLED_TASK) {
-                context->Queue.push(recvTask);
+                context->Queue->push(recvTask);
             } else { ++number_proc_completed; }
         }
 
@@ -105,40 +83,53 @@ void* task_wait(void* _context) { // если очередь пуста, то и
     }
 
     pthread_mutex_unlock(context->Lock);
-
-    return NULL;
+    return nullptr;
 }
 
-void* task_send(void* _context) {
+void task_execute(ssize_t task_extent) {
+    for (int j = 0; j < task_extent; ++j) {
+        globalRes += sqrt(j);
+    }
+}
+
+void* worker(void* _context) {
     auto context = (Context *) _context;
 
-    MPI_Status status;
+    while (context->StatusRun) {
+        std::cout << "SIZE QUEUE : \n" << context->Queue.size();
+        pthread_mutex_lock(context->Lock);
 
-    while (true) {
+        unsigned size_queue = context->Queue->size();
+        for(int i = 0; i < size_queue; ++i) {
+            task_execute(context->Queue->pop());
+        }
 
+        pthread_cond_signal(&context->Cond);
 
+        pthread_mutex_unlock(context->Lock);
     }
 
-    return NULL;
+    return nullptr;
 }
 
+
 Context fill_context(const int count_process, const int rank,
-                     pthread_mutex_t* mutex, std::queue<ssize_t> queue) {
+                     pthread_mutex_t* mutex, pthread_cond_t* cond) {
+
     Context context = {
             .CountThread = count_process,
             .Lock = mutex,
-            .Queue = std::move(queue),
+            .Queue = new ConcurrentQueue<ssize_t>(mutex, cond),
             .Rank = rank,
             .Cond = PTHREAD_COND_INITIALIZER,
-            .StatusRun = true
+            .StatusRun = true,
+            .Count_task_execute = 0
     };
+    
     return context;
-    }
+}
 
 void run_pthread(const int rank, const int count_process) {
-    ssize_t size_queue = get_random_value(BOUNDS_QUEUE, rank, count_process);
-    std::queue<ssize_t> queue_tasks = initialize_queue_task(size_queue, rank, count_process);
-
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     pthread_attr_t attrs;
 
@@ -149,18 +140,18 @@ void run_pthread(const int rank, const int count_process) {
     pthread_t thread_task_wait;
     pthread_t thread_task_send;
 
-    Context context = fill_context(count_process, rank,
-                                   &mutex, queue_tasks);
+    Context context = fill_context(count_process, rank, &mutex, cond);
+    context.Queue->filling(rank*BOUNDS_QUEUE);
 
-    //pthread_create(&thread_worker, &attrs, worker, &context);
+    pthread_create(&thread_worker, &attrs, worker, &context);
     pthread_create(&thread_task_wait, &attrs, task_wait, &context);
-    //pthread_create(&thread_task_send, &attrs, task_send, &context);
+    pthread_create(&thread_task_send, &attrs, task_send, &context);
 
     pthread_attr_destroy(&attrs);
 
-    //pthread_join(thread_worker, nullptr);
+    pthread_join(thread_worker, nullptr);
     pthread_join(thread_task_wait, nullptr);
-    //pthread_join(thread_task_send, nullptr);
+    pthread_join(thread_task_send, nullptr);
 
     pthread_mutex_destroy(&mutex);
 }

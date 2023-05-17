@@ -3,7 +3,7 @@ project(Task5)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(Task5 main.cpp)
+add_executable(Task5 main.cpp ConcurrentQueue.h)
 
 find_package(MPI REQUIRED)
 
