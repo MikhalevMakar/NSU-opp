@@ -10,6 +10,16 @@
 #include <random>
 #include <utility>
 
+enum constants {
+    BOUNDS_QUEUE = 10000,
+    BOUNDS_SIZE_TASK = 1000,
+    ROOT = 0,
+    PROCESS_FULFILLED_TASK = -1,
+    TAG_REQUEST_TASK = 123,
+    TAG_SEND_TASK = 321,
+    INCREMENT = 1,
+    STOP_WORK = -1
+};
 
 template <typename T>
 class ConcurrentQueue {
@@ -32,11 +42,15 @@ public:
     }
 
     T pop() {
+        T task;
         pthread_mutex_lock(lock);
-        T task = queue.front();
-        queue.pop();
+        if (!queue.empty()) {
+             task = queue.front();
+             queue.pop();
+        } else {
+            task = PROCESS_FULFILLED_TASK;
+        }
         pthread_mutex_unlock(lock);
-
         return task;
     }
 
@@ -45,9 +59,8 @@ public:
          for (int i = 0; i < size_queue; ++i) {
 
          queue.push(
-                 get_repeat_number(get_random_value(initial_boundary, final_boundary),
-                                   initial_boundary,
-                                   final_boundary)
+                    get_repeat_number(initial_boundary,
+                                      final_boundary)
                     );
          }
 
@@ -62,17 +75,17 @@ public:
         return isEmpty;
     }
 
-    ssize_t size() {
+    unsigned size() {
          pthread_mutex_lock(lock);
-         ssize_t size = queue.size();
+         unsigned size = queue.size();
          pthread_mutex_unlock(lock);
 
          return size;
     }
 
 private:
-    ssize_t get_repeat_number(const int initial_boundary, const int final_boundary, const int i) {
-        return abs(initial_boundary - (initial_boundary % final_boundary));
+    T get_repeat_number(const int initial_boundary, const int final_boundary) {
+        return abs(initial_boundary - (final_boundary / get_random_value(initial_boundary, final_boundary)));
     }
 
     ssize_t get_random_value(const int initial_boundary, const int final_boundary) {
