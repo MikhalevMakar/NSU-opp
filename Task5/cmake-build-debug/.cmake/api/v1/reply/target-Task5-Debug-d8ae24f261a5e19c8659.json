@@ -132,7 +132,7 @@
 		},
 		{
 			"backtrace" : 1,
-			"path" : "concurrentQueue.h",
+			"path" : "ConcurrentQueue.h",
 			"sourceGroupIndex" : 1
 		}
 	],

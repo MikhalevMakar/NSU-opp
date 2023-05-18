@@ -15,8 +15,8 @@ template <typename T>
 class ConcurrentQueue {
 private:
     std::queue<T> queue;
-    pthread_mutex_t* lock;
-    pthread_cond_t* cond;
+    pthread_mutex_t* lock{};
+    pthread_cond_t* cond{};
 
 public:
     ConcurrentQueue(pthread_mutex_t* lock, pthread_cond_t* cond) {
@@ -24,9 +24,9 @@ public:
         this->cond = cond;
     }
 
-    void push(T task) {
+    void push(const T& task) {
         pthread_mutex_lock(lock);
-        queue.add(task);
+        queue.push(task);
         pthread_cond_signal(cond);
         pthread_mutex_unlock(lock);
     }
@@ -40,14 +40,14 @@ public:
         return task;
     }
 
-    void filling(int size_queue, int initial_boundary, int final_boundary) {
+    void filling(const int size_queue, const int initial_boundary, const int final_boundary) {
          pthread_mutex_lock(lock);
          for (int i = 0; i < size_queue; ++i) {
 
          queue.push(
-                    get_repeat_number(get_random_value(BOUNDS_SIZE_TASK, rank, count_process),
-                                      rank,
-                                      count_process)
+                 get_repeat_number(get_random_value(initial_boundary, final_boundary),
+                                   initial_boundary,
+                                   final_boundary)
                     );
          }
 
@@ -71,15 +71,15 @@ public:
     }
 
 private:
-    ssize_t get_repeat_number(const ssize_t random_value, const int rank, const int countProcess) {
-        return abs(rank - (random_value % countProcess));
+    ssize_t get_repeat_number(const int initial_boundary, const int final_boundary, const int i) {
+        return abs(initial_boundary - (initial_boundary % final_boundary));
     }
 
-    ssize_t get_random_value(const int bounds, const int rank, const int count_process) {
+    ssize_t get_random_value(const int initial_boundary, const int final_boundary) {
         std::random_device rd;
         std::mt19937 gen(rd());
 
-        std::uniform_int_distribution<ssize_t> dist(count_process, (rank + 1) * bounds + count_process);
+        std::uniform_int_distribution<ssize_t> dist(initial_boundary, final_boundary);
         return dist(gen);
     }
 };
