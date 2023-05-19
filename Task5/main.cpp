@@ -59,15 +59,14 @@ void* task_wait(void* _context) {
 
             MPI_Send(&context->Rank, 1, MPI_INT, i, TAG_REQUEST_TASK, MPI_COMM_WORLD);
             MPI_Recv(&recvTask, 1, MPI_INT, i, TAG_SEND_TASK, MPI_COMM_WORLD, &status);
-          //  printf("RECV TASK %d\n", recvTask);
             if (recvTask != PROCESS_FULFILLED_TASK) {
-             //   printf("RANK: %d, add task to queue\n", context->Rank);
                 context->Queue->push(recvTask);
             } else { ++number_proc_completed; }
         }
 
-        if (number_proc_completed == context->CountThread) {
+        if(number_proc_completed == context->CountThread) {
             recvTask = STOP_WORK;
+            MPI_Barrier(MPI_COMM_WORLD);
             context->StatusRun = false;
             MPI_Send(&recvTask, 1, MPI_INT, context->Rank, TAG_REQUEST_TASK, MPI_COMM_WORLD);
 
@@ -91,8 +90,10 @@ void* worker(void* _context) {
     auto context = (Context *) _context;
 
     while (context->StatusRun) {
-        for(int i = 0; i < context->Queue->size(); ++i) {
-            task_execute(context->Queue->pop(), context);
+        while(true) {
+            int task = context->Queue->pop();
+            if (task == STOP_WORK) break;
+            task_execute(task, context);
             ++context->CountTaskExecute;
         }
 
@@ -148,9 +149,9 @@ void run_pthread(const int rank, const int count_process) {
     pthread_cond_init(&cond_work, nullptr);
 
     Context context = fill_context(count_process, rank, &mutex, &cond_wait, &cond_work);
-    //if (context.Rank == ROOT) {
+    if (context.Rank == ROOT) {
         context.Queue->filling((rank + INCREMENT) * BOUNDS_QUEUE, (rank + INCREMENT)*100, BOUNDS_SIZE_TASK);
- //   }
+    }
 
     printf("RANK: %d, SIZE QUEUE : %u\n", context.Rank, context.Queue->size());
 
@@ -169,7 +170,7 @@ void run_pthread(const int rank, const int count_process) {
 }
 
 int main(int argc, char **argv) {
-    int provider = MPI_THREAD_MULTIPLE;
+    int provider;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provider);
 
     int rank, countThread;
