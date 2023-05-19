@@ -23,7 +23,9 @@ void* task_send(void* _context) {
     printf("RANK: %d, Start task_send\n", context->Rank);
 
     while(context->StatusRun) {
+        printf("RANK %d, Ждем новый запрос task_send\n", context->Rank);
         MPI_Recv(&rankSender, 1, MPI_INT, MPI_ANY_SOURCE, TAG_REQUEST_TASK, MPI_COMM_WORLD, &status);
+        printf("RANK %d, Прислали ранг %d\n", context->Rank, rankSender);
         if(rankSender == STOP_WORK) continue;
 
         int task = context->Queue->pop();
@@ -56,9 +58,7 @@ void* task_wait(void* _context) {
 
         for (int i = 0; i < context->CountThread; ++i) {
             if(i == context->Rank) continue;
-
             MPI_Send(&context->Rank, 1, MPI_INT, i, TAG_REQUEST_TASK, MPI_COMM_WORLD);
-
             MPI_Recv(&recvTask, 1, MPI_INT, i, TAG_SEND_TASK, MPI_COMM_WORLD, &status);
             if (recvTask != PROCESS_FULFILLED_TASK) {
                 context->Queue->push(recvTask);
@@ -66,11 +66,11 @@ void* task_wait(void* _context) {
         }
 
         if(number_proc_completed == context->CountThread - INCREMENT) {
-
+            printf("Rank %d, Ждем все процессы\n", context->Rank);
             MPI_Barrier(MPI_COMM_WORLD);
+            printf("RANK %d, Дождались всех процессов все процессы\n", context->Rank);
             context->StatusRun = false;
             recvTask = STOP_WORK;
-
             MPI_Send(&recvTask, 1, MPI_INT, context->Rank, TAG_REQUEST_TASK, MPI_COMM_WORLD);
 
             pthread_mutex_lock(context->Lock);
@@ -105,10 +105,12 @@ void* worker(void* _context) {
         pthread_mutex_unlock(context->Lock);
 
         while(context->Queue->empty() && context->StatusRun) {
+          printf("Rank: %d, Если очередь пуста  ждем задачи \n", context->Rank);
           pthread_mutex_lock(context->Lock);
           pthread_cond_wait(context->CondWork, context->Lock);
           pthread_mutex_unlock(context->Lock);
         }
+        printf("Rank: %d, Поступили новые задачи идем делать !,  %d\n", context->Rank, context->StatusRun);
     }
 
     printf("RANK: %d, finish worker, count task_execute: %d\n", context->Rank, context->CountTaskExecute);
@@ -152,9 +154,9 @@ void run_pthread(const int rank, const int count_process) {
     pthread_cond_init(&cond_work, nullptr);
 
     Context context = fill_context(count_process, rank, &mutex, &cond_wait, &cond_work);
-    if (context.Rank == ROOT) {
+    //if (context.Rank == ROOT) {
         context.Queue->filling((rank + INCREMENT) * BOUNDS_QUEUE, (rank + INCREMENT)*1000, BOUNDS_SIZE_TASK);
-    }
+    //}
 
     printf("RANK: %d, SIZE QUEUE : %u\n", context.Rank, context.Queue->size());
 
