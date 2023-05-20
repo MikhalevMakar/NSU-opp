@@ -11,8 +11,8 @@
 #include <utility>
 
 enum constants {
-    BOUNDS_QUEUE = 100,
-    BOUNDS_SIZE_TASK = 100000,
+    BOUNDS_QUEUE = 1000,
+    BOUNDS_SIZE_TASK = 10000000,
     ROOT = 0,
     PROCESS_FULFILLED_TASK = -1,
     TAG_REQUEST_TASK = 123,
@@ -54,19 +54,6 @@ public:
         return task;
     }
 
-    void filling(const int size_queue, const T initial_boundary, const T final_boundary) {
-         pthread_mutex_lock(lock);
-         for (int i = 0; i < size_queue; ++i) {
-
-         queue.push(
-                    get_repeat_number(initial_boundary,
-                                      final_boundary)
-                    );
-         }
-
-         pthread_mutex_unlock(lock);
-    }
-
     bool empty() {
         pthread_mutex_lock(lock);
         bool isEmpty = queue.empty();
@@ -81,19 +68,6 @@ public:
          pthread_mutex_unlock(lock);
 
          return size;
-    }
-
-private:
-    T get_repeat_number(const T initial_boundary, const T final_boundary) {
-        return abs(initial_boundary - (final_boundary / get_random_value(initial_boundary, final_boundary)));
-    }
-
-    ssize_t get_random_value(const T initial_boundary, const T final_boundary) {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-
-        std::uniform_int_distribution<ssize_t> dist(initial_boundary, final_boundary);
-        return dist(gen);
     }
 };
 

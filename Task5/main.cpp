@@ -15,12 +15,33 @@ typedef struct {
     double ResultSum;
 } Context;
 
+ ssize_t get_random_value(const int initial_boundary, const int final_boundary) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    std::uniform_int_distribution<ssize_t> dist(initial_boundary, final_boundary);
+    return dist(gen);
+}
+
+int  get_repeat_number(const int initial_boundary, const int final_boundary) {
+    return abs(initial_boundary - (final_boundary / get_random_value(initial_boundary, final_boundary)));
+}
+
+void filling_queue(const Context* context, const int size_queue, const int initial_boundary, const int final_boundary) {
+
+     for (int i = 0; i < size_queue; ++i) {
+
+             context->Queue->push(
+                                  get_repeat_number(initial_boundary,
+                                                    final_boundary)
+                                  );
+         }
+}
+
 void* task_send(void* _context) {
     auto context = (Context*) _context;
     MPI_Status status;
     int rankSender;
-
-    printf("RANK: %d, Start task_send\n", context->Rank);
 
     while(context->StatusRun) {
         MPI_Recv(&rankSender, 1, MPI_INT, MPI_ANY_SOURCE, TAG_REQUEST_TASK, MPI_COMM_WORLD, &status);
@@ -30,17 +51,25 @@ void* task_send(void* _context) {
         MPI_Send(&task, 1, MPI_INT, rankSender, TAG_SEND_TASK, MPI_COMM_WORLD);
     }
 
-    printf("RANK: %d, finish task_send, status: %d\n", context->Rank, context->StatusRun);
     return nullptr;
 }
+
+void finish_work_node(Context* context, const int recvTask) {
+     MPI_Barrier(MPI_COMM_WORLD);
+     context->StatusRun = false;
+
+     MPI_Send(&recvTask, 1, MPI_INT, context->Rank, TAG_REQUEST_TASK, MPI_COMM_WORLD);
+
+     pthread_mutex_lock(context->Lock);
+     pthread_cond_signal(context->CondWork);
+     pthread_mutex_unlock(context->Lock);
+ }
 
 void* task_wait(void* _context) {
     auto context = (Context *) _context;
 
     MPI_Status status;
     int recvTask;
-
-    printf("RANK: %d, start task_wait\n", context->Rank);
 
     while(context->StatusRun) {
 
@@ -65,21 +94,10 @@ void* task_wait(void* _context) {
             } else { ++number_proc_completed; }
         }
 
-        if(number_proc_completed == context->CountThread - INCREMENT) {
-
-            MPI_Barrier(MPI_COMM_WORLD);
-            context->StatusRun = false;
-            recvTask = STOP_WORK;
-
-            MPI_Send(&recvTask, 1, MPI_INT, context->Rank, TAG_REQUEST_TASK, MPI_COMM_WORLD);
-
-            pthread_mutex_lock(context->Lock);
-            pthread_cond_signal(context->CondWork);
-            pthread_mutex_unlock(context->Lock);
-        }
+        if(number_proc_completed == context->CountThread - INCREMENT)
+             finish_work_node(context, STOP_WORK);
     }
 
-    printf("RANK: %d, finish task_wait, status: %d\n", context->Rank, context->StatusRun);
     return nullptr;
 }
 
@@ -100,12 +118,9 @@ void* worker(void* _context) {
             ++context->CountTaskExecute;
         }
 
-        pthread_mutex_lock(context->Lock);
-        pthread_cond_signal(context->CondWait);
-        pthread_mutex_unlock(context->Lock);
-
         while(context->Queue->empty() && context->StatusRun) {
           pthread_mutex_lock(context->Lock);
+          pthread_cond_signal(context->CondWait);
           pthread_cond_wait(context->CondWork, context->Lock);
           pthread_mutex_unlock(context->Lock);
         }
@@ -153,7 +168,9 @@ void run_pthread(const int rank, const int count_process) {
 
     Context context = fill_context(count_process, rank, &mutex, &cond_wait, &cond_work);
     if (context.Rank == ROOT) {
-        context.Queue->filling((rank + INCREMENT) * BOUNDS_QUEUE, (rank + INCREMENT)*1000, BOUNDS_SIZE_TASK);
+        filling_queue(&context,
+                      (rank + INCREMENT) * BOUNDS_QUEUE,
+                      (rank + INCREMENT)*1000000, BOUNDS_SIZE_TASK);
     }
 
     printf("RANK: %d, SIZE QUEUE : %u\n", context.Rank, context.Queue->size());
