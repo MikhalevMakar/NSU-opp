@@ -3,6 +3,8 @@
 #include <pthread.h>
 #include "ConcurrentQueue.h"
 
+//export TMPDIR=/tmp
+
 typedef struct {
     const int CountThread;
     pthread_mutex_t* Lock;
