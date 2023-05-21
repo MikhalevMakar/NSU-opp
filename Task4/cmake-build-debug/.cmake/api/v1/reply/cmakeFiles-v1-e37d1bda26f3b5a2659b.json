@@ -187,20 +187,6 @@
 			"path" : "/Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.23/Modules/FindMPI/test_mpi.c"
 		},
 		{
-			"isCMake" : true,
-			"isExternal" : true,
-			"path" : "/Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.23/Modules/FindMPI/test_mpi.c"
-		},
-		{
-			"isGenerated" : true,
-			"path" : "cmake-build-debug/CMakeFiles/FindMPI/test_mpi.cpp"
-		},
-		{
-			"isCMake" : true,
-			"isExternal" : true,
-			"path" : "/Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.23/Modules/FindMPI/test_mpi.c"
-		},
-		{
 			"isGenerated" : true,
 			"path" : "cmake-build-debug/CMakeFiles/FindMPI/test_mpi.cpp"
 		},

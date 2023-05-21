@@ -4,66 +4,15 @@
 #include <cfloat>
 #include <cmath>
 #include <vector>
+#include "Context.h"
 
-#define Grid double*
-
-enum AREA_CHANGE_SYMBOL {
-    Dx = 2,
-    Dy = 2,
-    Dz = 2,
-    x_0 = -1,
-    y_0 = -1,
-    z_0 = -1
-};
-
-enum SIZE_GRID {
-    Nx = 100,
-    Ny = 400,
-    Nz = 300
-};
-
-struct Index {
-    int i;
-    int j;
-    int k;
-};
-
-constexpr double ValueStep(const int D, const int N) {
-    return static_cast<double>(D / static_cast<double>(N - 1));
+template <typename T, typename... Args>
+void OverrideFree(T matrix, Args... matrices) {
+    free(matrix);
+    if constexpr(sizeof...(matrices) > 0) {
+        OverrideFree(matrices...);
+    }
 }
-
-struct GridSteps {
-    static constexpr double Hx = ValueStep(AREA_CHANGE_SYMBOL::Dx, SIZE_GRID::Nx);
-    static constexpr double Hy =  ValueStep(AREA_CHANGE_SYMBOL::Dy, SIZE_GRID::Ny);
-    static constexpr double Hz = ValueStep(AREA_CHANGE_SYMBOL::Dz, SIZE_GRID::Nz);
-};
-
-constexpr double CalcCoefficientH(const double H) {
-    return 2 / H;
-}
-
-struct Const {
-    static constexpr double a = 1e5;
-    static constexpr double EPLSILOND = 1e-8;
-    static constexpr int INITIAL_APPROXIMATION = 0;
-    static constexpr int ROOT = 0;
-    static constexpr int MPI_TAG_LOW = 24;
-    static constexpr int MPI_TAG_UPPER = 42;
-
-    static constexpr double SQUARE_STEP_Hx = GridSteps::Hx * GridSteps::Hx;
-    static constexpr double SQUARE_STEP_Hy =  GridSteps::Hy * GridSteps::Hy;
-    static constexpr double SQUARE_STEP_Hz = GridSteps::Hz * GridSteps::Hz;
-
-    static constexpr double STEP_Hx = CalcCoefficientH(SQUARE_STEP_Hx);
-    static constexpr double STEP_Hy = CalcCoefficientH(SQUARE_STEP_Hy);
-    static constexpr double STEP_Hz = CalcCoefficientH(SQUARE_STEP_Hz);
-
-    static constexpr double COEFFICIENT =
-            1 / ( STEP_Hx + STEP_Hy + STEP_Hz + Const::a);
-
-    static constexpr int INCREASE_RANK = 1;
-};
-
 
 Grid MemoryAllocatedGrid(int size) {
     Grid grid = new double[size];
@@ -71,14 +20,26 @@ Grid MemoryAllocatedGrid(int size) {
     return grid;
 }
 
+template <typename T, typename... Args>
+bool IsZero(const T value, const Args... digits) {
+
+    if(value == 0) return true;
+
+    if constexpr(sizeof...(digits) > 0) {
+        return IsZero(digits...);
+    }
+
+    return false;
+}
+
 double GetCoordinate(const double startCoord, const double step, const int index) {
     return startCoord + index*step;
 }
 
 double CalculateFunctionValue(const int i, const int j, const int k) {
-    double x = GetCoordinate(AREA_CHANGE_SYMBOL::x_0, GridSteps::Hx, i);
-    double y = GetCoordinate(AREA_CHANGE_SYMBOL::y_0, GridSteps::Hy, j);
-    double z = GetCoordinate(AREA_CHANGE_SYMBOL::z_0, GridSteps::Hz, k);
+    double x = GetCoordinate(AREA_CHANGE_Ω::x_0, GridSteps::Hx, i);
+    double y = GetCoordinate(AREA_CHANGE_Ω::y_0, GridSteps::Hy, j);
+    double z = GetCoordinate(AREA_CHANGE_Ω::z_0, GridSteps::Hz, k);
     return x*x + y*y + z*z;
 }
 
@@ -94,7 +55,7 @@ Grid GenerateGrid(const std::vector<int> vectorOffset, const std::vector<int> ve
         for(int j = 0; j < Ny; ++j)
             for(int k = 0; k < Nz; ++k) {
                 grid[i * Ny * Nz + j * Nz + k] =
-                        (beginPosI == 0||  j == 0 || k == 0 || beginPosI == Nx-1 || j == Ny-1 || k == Nz-1)
+                        (IsZero(beginPosI, j, k) || beginPosI == Nx-1 || j == Ny-1 || k == Nz-1)
                         ?
                         CalculateFunctionValue(beginPosI, j, k) : Const::INITIAL_APPROXIMATION;
             }
@@ -136,7 +97,7 @@ void CalculationInnerPartGrid(Grid grid, double& maximumChange,
             }
         }
     }
-    free(index);
+    OverrideFree(index);
 }
 
 void CalculationEdgesPartGrid(Grid grid, const Grid bufferLow, const Grid bufferUpper,
@@ -172,7 +133,7 @@ void CalculationEdgesPartGrid(Grid grid, const Grid bufferLow, const Grid buffer
             }
         }
     }
-    free(index);
+    OverrideFree(index);
 }
 
 void GenerateVectorOffset(std::vector<int>& vectorCountLine, std::vector<int>& vectorOffset, const int size) {
@@ -247,8 +208,7 @@ void FindMaxChange(double* vectorMaxChange, double& maxChange, const int countTh
 
 void CalculateMethodJacobi(Grid grid, const int rank, const int countThread,
                            const std::vector<int> vectorCountLine, const std::vector<int> vectorOffset) {
-
-    MPI_Request request[4];
+    MPI_Request requestSendRecv[4];
     double maximumChange = DBL_MIN;
 
     double* vectorMaxChange = MemoryAllocatedGrid(countThread);
@@ -259,30 +219,26 @@ void CalculateMethodJacobi(Grid grid, const int rank, const int countThread,
     do {
         maximumChange = DBL_MIN;
         ICommutation(rank, countThread, vectorCountLine[countThread-1]-1,
-                     bufferReceivedLow, bufferReceivedUpper, grid, request);
+                     bufferReceivedLow, bufferReceivedUpper, grid, requestSendRecv);
 
         CalculationInnerPartGrid(grid, maximumChange, vectorCountLine, vectorOffset, rank);
 
-        WaitingRequest(request, rank, countThread);
+        WaitingRequest(requestSendRecv, rank, countThread);
 
         CalculationEdgesPartGrid(grid, bufferReceivedLow, bufferReceivedUpper,
                                  vectorCountLine, vectorOffset,
                                  maximumChange, rank, countThread);
 
-       FindMaxChange(vectorMaxChange, maximumChange, countThread);
-    } while(maximumChange >= Const::EPLSILOND);
+        FindMaxChange(vectorMaxChange, maximumChange, countThread);
+    } while(maximumChange >= Const::ε);
 
     maximumChange = FindMaxDelta(grid, rank, vectorCountLine, vectorOffset);
-
     FindMaxChange(vectorMaxChange, maximumChange, countThread);
 
-    if(rank == Const::ROOT) {
+    if(rank == Const::ROOT)
         std::cout << "CHANGE_VALUE: " << maximumChange << std::endl;
-    }
 
-    delete []bufferReceivedUpper;
-    delete []bufferReceivedLow;
-    delete []vectorMaxChange;
+    OverrideFree(bufferReceivedUpper, bufferReceivedLow, vectorMaxChange);
 }
 
 void RunMethodJacobi() {
@@ -303,9 +259,8 @@ void RunMethodJacobi() {
     if(rank == Const::ROOT)
         std::cout << std::endl << "TIME: " << endTime - startTime << " seconds" << std::endl;
 
-    delete []grid;
+    OverrideFree(grid);
 }
-
 
 int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
