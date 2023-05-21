@@ -1,6 +1,6 @@
 #define Grid double*
 
-enum AREA_CHANGE_Ω {
+enum AREA_Ω {
     Dx = 2,
     Dy = 2,
     Dz = 2,
