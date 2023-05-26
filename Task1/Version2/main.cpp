@@ -17,6 +17,7 @@ const double epsilon = 1e-7;
 typedef double* dynamicVector;
 typedef double* dynamicMatrix;
 
+
 void PrintVector(dynamicVector vector, const int size) {
     for(int j = 0; j < size; ++j) {
         std::cout << (double)vector[j] << " ";
