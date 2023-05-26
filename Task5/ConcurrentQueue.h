@@ -11,8 +11,9 @@
 #include <utility>
 
 enum constants {
-    BOUNDS_QUEUE = 1000,
+    BOUNDS_QUEUE = 50,
     BOUNDS_SIZE_TASK = 10000000,
+    FILL_RATE =  1000000,
     ROOT = 0,
     PROCESS_FULFILLED_TASK = -1,
     TAG_REQUEST_TASK = 123,

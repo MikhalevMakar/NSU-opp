@@ -2,6 +2,7 @@
 #include <mpi.h>
 #include <pthread.h>
 #include "ConcurrentQueue.h"
+#include <memory>
 
 //export TMPDIR=/tmp
 
@@ -25,19 +26,16 @@ typedef struct {
     return dist(gen);
 }
 
-int  get_repeat_number(const int initial_boundary, const int final_boundary) {
+int get_repeat_number(const int initial_boundary, const int final_boundary) {
     return abs(initial_boundary - (final_boundary / get_random_value(initial_boundary, final_boundary)));
 }
 
-void filling_queue(const Context* context, const int size_queue, const int initial_boundary, const int final_boundary) {
+void filling_queue(const Context* context, const int size_queue,
+                   const int initial_boundary, const int final_boundary) {
 
      for (int i = 0; i < size_queue; ++i) {
-
-             context->Queue->push(
-                                  get_repeat_number(initial_boundary,
-                                                    final_boundary)
-                                  );
-         }
+         context->Queue->push(get_repeat_number(initial_boundary, final_boundary));
+     }
 }
 
 void* task_send(void* _context) {
@@ -169,11 +167,10 @@ void run_pthread(const int rank, const int count_process) {
     pthread_cond_init(&cond_work, nullptr);
 
     Context context = fill_context(count_process, rank, &mutex, &cond_wait, &cond_work);
-    if (context.Rank == ROOT) {
-        filling_queue(&context,
-                      (rank + INCREMENT) * BOUNDS_QUEUE,
-                      (rank + INCREMENT)*1000000, BOUNDS_SIZE_TASK);
-    }
+
+    filling_queue(&context,
+                 (rank + INCREMENT) * BOUNDS_QUEUE,
+                 (rank + INCREMENT) * FILL_RATE, BOUNDS_SIZE_TASK);
 
     printf("RANK: %d, SIZE QUEUE : %u\n", context.Rank, context.Queue->size());
 
