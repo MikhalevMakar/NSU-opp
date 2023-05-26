@@ -41,14 +41,14 @@ void filling_queue(const Context* context, const int size_queue,
 void* task_send(void* _context) {
     auto context = (Context*) _context;
     MPI_Status status;
-    int rankSender;
+    int rank_sender;
 
     while(context->StatusRun) {
-        MPI_Recv(&rankSender, 1, MPI_INT, MPI_ANY_SOURCE, TAG_REQUEST_TASK, MPI_COMM_WORLD, &status);
-        if(rankSender == STOP_WORK) continue;
+        MPI_Recv(&rank_sender, 1, MPI_INT, MPI_ANY_SOURCE, TAG_REQUEST_TASK, MPI_COMM_WORLD, &status);
+        if(rank_sender == STOP_WORK) continue;
 
         int task = context->Queue->pop();
-        MPI_Send(&task, 1, MPI_INT, rankSender, TAG_SEND_TASK, MPI_COMM_WORLD);
+        MPI_Send(&task, 1, MPI_INT, rank_sender, TAG_SEND_TASK, MPI_COMM_WORLD);
     }
 
     return nullptr;
@@ -69,7 +69,7 @@ void* task_wait(void* _context) {
     auto context = (Context *) _context;
 
     MPI_Status status;
-    int recvTask;
+    int recv_task;
 
     while(context->StatusRun) {
 
@@ -88,9 +88,9 @@ void* task_wait(void* _context) {
 
             MPI_Send(&context->Rank, 1, MPI_INT, i, TAG_REQUEST_TASK, MPI_COMM_WORLD);
 
-            MPI_Recv(&recvTask, 1, MPI_INT, i, TAG_SEND_TASK, MPI_COMM_WORLD, &status);
-            if (recvTask != PROCESS_FULFILLED_TASK) {
-                context->Queue->push(recvTask);
+            MPI_Recv(&recv_task, 1, MPI_INT, i, TAG_SEND_TASK, MPI_COMM_WORLD, &status);
+            if (recv_task != PROCESS_FULFILLED_TASK) {
+                context->Queue->push(recv_task);
             } else { ++number_proc_completed; }
         }
 
